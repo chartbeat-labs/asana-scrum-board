@@ -1,0 +1,31 @@
+(TODOs moved to Asana https://app.asana.com/0/39663303636117/39663303636117)
+
+Bugs:
+- If no sections are found, put tasks into an empty colum (should do that anyway if there are tasks at the top without a section.
+- Currently, cards can be dragged into other cards, stop that (or keep it and make them sub-tasks (use setParent endpoint)
+New Features:
+- Design Love
+- Tags (blocked tag show warning icon on card)?
+- Sprint burn down chart using bracket values
+- Add task description to card as a mouse-over/popup/something
+- Add workspace selector
+- Card colors to indicate progress?
+- Update tasks from Asana (watch for changes or update prior to edit).
+- watch asana for task updates and refresh board occaisionally.
+- Add point values to column headers that sums to the tasks in the column.  Perhaps show (points/tasks)
+- Sub-task handling: Show master tasks as a swim lane and show the tasks sub-tasks within the swim lane a la Jira
+- Sprint planning feature / backlog grooming: Show a list view of items at the top of a project. Allow the user to drag down a bar to a certain level in the backlog.  When draggin the bar, the bar title will update with the number of contained points/items.  Click a 'create sprint' button on the bar to add all the stories above the bar into a new or existing project.
+- Click on a card (info icon?) to edit via a larger dialog box.  Dialog shows activity on the card, followers, etc....
+Complete:
+x replace `filter` with the proper function on api response handlers
+x Currently, re authenticating before each call, should only have to do that once.
+x when a task is moved to a different column, update the section (addProject/removeProject endpoints, section is included in memberships)
+x Strip out bracketed numbers and show those as points
+x Need to retrieve more tasks than just the first 50
+x Need to retrieve more projects than just the first 50
+x edit title/description/points/assigned to
+x Implement project search instead of static drop-down of projects
+x cards overflow bottom of column.  removing column height=100% kind of helps but makes other columns shorter.  fixup heights makes divs work.  changing columns to td within a table fixes the heights and makes them resize when things are moved in/out of a column.
+x Columns wrap if screen is resized, don't want them to do that.  Changed to table layout.
+x Add checkbox to close task.
+x click empty head to assign to a person

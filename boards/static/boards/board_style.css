@@ -1,0 +1,223 @@
+body
+{
+    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+
+.no-title .ui-dialog-titlebar {
+  display: none;
+}
+
+.button {
+  display: inline-block;
+}
+
+.ui-dialog {
+    font-size: 12px;
+    overflow: visible;
+}
+
+.ui-widget {
+    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.ui-tooltip-content {
+    font-size: 10px;
+}
+
+.pageTitle
+{
+    font-size: 20px;
+    font-weight: 100;
+}
+
+.pageSubTitle
+{
+    font-size: 12px;
+    font-weight: 100;
+}
+
+.pageTitleImage
+{
+    vertical-align: middle;
+}
+
+.hidden
+{
+    visibility: hidden;
+}
+
+#board
+{
+    // width: 910px;
+    // min-height:100px;
+
+    // position:relative;
+    // display: inline;
+}
+
+#projectSelector
+{
+    margin: 10px;
+}
+
+.column.over
+{
+    border: 2px dashed #000;
+}
+
+.column
+{
+    display: inline-block;
+    float: left;
+    margin-left: -1px; 
+    height: 100%;
+    min-height:150px;
+    width: 200px;
+    border: 1px solid black;
+    background-color: rgb(251,251,251);
+    font-size: 14px;
+    vertical-align: top;
+}
+
+.columnTitle
+{
+    background-color:#DDDDDC;
+    text-align:center;
+    // color:black;
+    padding: 2px 0px;
+}
+
+*[draggable=true]
+{
+    // float:left;
+    // min-width: 50px;
+    // min-height: 50px;
+
+    // font-weight:bold;
+
+    // background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.63, white), color-stop(0.92, rgb(5,161,245)));
+    // background-image:-moz-linear-gradient( center top, white 63%, rgb(5,161,245) 92%);
+    // -webkit-background-size:1px 8px;
+    // -moz-background-size:1px 8px;
+    // background-size:1px 8px;
+    // background-repeat:repeat;
+}
+
+.card
+{
+    background-color: rgb(255,255,255);
+    cursor: move;
+    border: 1px solid black;
+    margin: 10px;
+    min-height:60px;
+    font-size: 14px;
+    position: relative;  // this allows the .cardValue position to be relative to this element
+}
+
+.cardTitle
+{
+    // background-color: rgb(255,255,255);
+    border:2px solid white;
+    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    resize: none;
+    width: 147px;
+}
+
+.cardValue
+{
+    float: right;
+
+    // border:2px solid white;
+    // height: 100%;
+    resize: none;
+    text-align: center;
+    line-height: 9px;
+    width: 27px;
+    position: absolute;
+    left: 149px;
+    bottom: 0px;
+    border: 2px;
+}
+
+.cardAssignee
+{
+    float: right;
+    padding: 2px;
+}
+
+.typeahead,
+.tt-query,
+.tt-hint {
+    width: 396px;
+    height: 30px;
+    padding: 8px 12px;
+    // font-size: 24px;
+    line-height: 30px;
+    border: 2px solid #ccc;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    outline: none;
+}
+
+.typeahead {
+    background-color: #fff;
+}
+
+.typeahead:focus {
+    border: 2px solid #0097cf;
+}
+
+.tt-query {
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+    color: #999
+}
+
+.tt-menu {
+    width: 422px;
+    margin: 12px 0;
+    padding: 8px 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+    -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+    box-shadow: 0 5px 10px rgba(0,0,0,.2);
+}
+
+.tt-suggestion {
+    padding: 3px 20px;
+    // font-size: 18px;
+    line-height: 24px;
+}
+
+.tt-suggestion:hover {
+    cursor: pointer;
+    color: #fff;
+    background-color: #0097cf;
+}
+
+.tt-suggestion.tt-cursor {
+    color: #fff;
+    background-color: #0097cf;
+
+}
+
+.tt-suggestion p {
+    margin: 0;
+}
+

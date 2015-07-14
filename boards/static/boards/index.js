@@ -56,17 +56,17 @@ function initBoard(project) {
       project.id,
       {
         opt_fields: 'id,name,this.assignee.name,this.assignee.photo.' + PHOTO_SIZE + ',created_at,completed_at,completed,due_on,parent'
-      }).then(function(response) {
-        $('#board').html('');
-        return client.all(response);
       })
-  .each(function(task) {
-    newSection = addTask(task, currentSection, project.id);
-    if (newSection !== currentSection) {
-      sections.push(newSection);
-      currentSection = newSection;
-    }
-    currentTasks.push(task);
+  .then(function(collection) {
+    $('#board').html('');
+    collection.stream().on('data', function(task) {
+      newSection = addTask(task, currentSection, project.id);
+      if (newSection !== currentSection) {
+        sections.push(newSection);
+        currentSection = newSection;
+      }
+      currentTasks.push(task);
+    })
   })
   .finally(function(){
     postBoardSetup();
@@ -119,7 +119,6 @@ function postBoardSetup() {
 }
 
 function addTask(task, currentSection, projectId) {
-  var currentSection;
   if (':' == task.name.charAt(task.name.length-1)) {
     // we're a section
     currentSection = task;

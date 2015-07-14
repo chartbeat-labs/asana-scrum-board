@@ -115,7 +115,8 @@ table {
     border: 1px solid black;
     margin: 10px;
     min-height:60px;
-    font-size: 14px;
+    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
     position: relative;  // this allows the .cardValue position to be relative to this element
 }
 
@@ -123,8 +124,6 @@ table {
 {
     // background-color: rgb(255,255,255);
     border:2px solid white;
-    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 12px;
     resize: none;
     width: 147px;
 }
@@ -149,6 +148,17 @@ table {
 {
     float: right;
     padding: 2px;
+}
+
+.tag {
+    font-size: 8px;
+    border: 2px solid #E5E5E5;
+    background-color: #E5E5E5;
+}
+
+.tag_x {
+    color: white;
+    padding-left: 3px;
 }
 
 .typeahead,

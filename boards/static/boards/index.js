@@ -55,7 +55,7 @@ function initBoard(project) {
   client.tasks.findByProject(
       project.id,
       {
-        opt_fields: 'id,name,this.assignee.name,this.assignee.photo.' + PHOTO_SIZE + ',created_at,completed_at,completed,due_on,parent'
+        opt_fields: 'id,name,this.assignee.name,this.assignee.photo.' + PHOTO_SIZE + ',created_at,completed_at,completed,due_on,parent,this.tags.name,this.tags.color'
       })
   .then(function(collection) {
     $('#board').html('');
@@ -148,6 +148,26 @@ function createCard(section, task) {
 
   var assigneeId = task.id + '_assignee';
 
+  var tags = '';
+  if (task.tags) {
+    tags = task.tags.map(function(tag){
+      var colorStyle = ''
+      if (tag.color) {
+        colorStyle = 'style="background-color: '
+          + tag.color
+          + '; border-color: '
+          + tag.color
+          + ';"';
+      }
+      return '<span class="tag" '
+        + colorStyle
+        + '>'
+        + tag.name
+        + '<a class="tag_x">x</a>'
+        + '</span>'
+    }).join('')
+  }
+
   $('#' + section.id).append(
       '<div class="card" draggable="true" id="'
       + task.id + '">'
@@ -160,14 +180,15 @@ function createCard(section, task) {
       + task.id + '_name' + '">'
       + taskName
       + '</textarea>'
-      + '<div class="cardWidgets">'
+      + '<span class="cardWidgets">'
       + '<input type="checkbox" id="'
       + task.id + '_close' + '" />'
       + '<textarea class="cardValue" id="'
       + task.id + '_value' + '">'
       + taskValue
       + '</textarea>'
-      + '</div>'
+      + tags
+      + '</span>'
       + '</div>'
       );
   $('#' + task.id ).bind('dragstart', function(event) {
@@ -321,7 +342,7 @@ function selectProject(){
         opt_fields: 'id,name,archived,created_at,modified_at,color,notes,workspace,team',
       }
       ).then(function(project) {
-        console.log('Full project: ' + project.name);
+        console.log('Full project: ' + project.name + '[' + project.id + ']');
         initBoard(project);
       })
   });
@@ -382,12 +403,14 @@ function setupDemo() {
       id: 2,
       assignee: user,
       completed: true,
+      tags: [ { id: 10002, name: 'bug', color: 'rgb(246,114,114)' } ]
     },
     {
       name: '[13] Learn Python',
       id: 22,
       assignee: user,
       completed: true,
+      tags: [ { id: 10002, name: 'education', color: null } ]
     },
     {
       name: 'QA:',
@@ -418,11 +441,16 @@ function setupDemo() {
       name: '[Bug] It doesn\'t work!',
       id: 6,
       assignee: user,
+      tags: [
+        { id: 10001, name: 'blocker', color: 'light-yellow' },
+        { id: 10002, name: 'bug', color: 'rgb(246,114,114)' },
+      ]
     },
     {
       name: '[.5] Lorum ipsum bacon dolar.',
       id: 7,
       assignee: user,
+      tags: [ { id: 10001, name: 'blocker', color: 'light-yellow' } ]
     },
     {
       name: '[11] Learn HTML5',

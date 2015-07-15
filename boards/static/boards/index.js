@@ -345,10 +345,10 @@ function createColumn(projectId, section) {
     }
     // event.originalEvent.dataTransfer.dropEffect = 'move';
   });
-  
+  bindDropEventToColumn(projectId,section.id)
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
-  bindDropEventToColumn(projectId,section.id)
+  
 }
 
 function bindDropEventToColumn(projectId,sectionId){
@@ -406,7 +406,6 @@ function addSectionInAsana(sectionName,notecard,targetProject,oldSectionId){
 	   //Change id in column html id and rebind drop event
 	   $('#' + oldSectionId).attr("id",section.id);
 	   bindDropEventToColumn(targetProject['project'],section.id)
-	   
        return section;
       }, function(reason) {
          console.log('Exception: ' + reason);

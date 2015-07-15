@@ -163,7 +163,7 @@ function createCard(section, task) {
         + tag.name
         + '<a class="tag_x">x</a>'
         + '</span>'
-    }).join('')
+    }).join('');
   }
 
   $('#' + section.id).append(
@@ -315,6 +315,8 @@ function selectUser(task){
       }, function(reason) {
         console.log('Exception: ' + reason);
       }).finally(function(user){
+        task.assignee = currentUser;
+        updateAssignee(task);
         $( '#assigneeDialog' ).dialog("close");
         $('#assignee_popup_typeahead_input').autocomplete('destroy');
       });

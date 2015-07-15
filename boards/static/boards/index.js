@@ -212,8 +212,14 @@ function createCard(section, task) {
     }
   });
   */
+
   $('#' + task.id + '_close').prop('checked', task.completed);
-  $('#' + task.id ).bind('change', function(event) { updateTask(task) });
+
+  // Handle changes to task properties here
+  $('#' + task.id + '_close').change(function() { task.completed = $( this ).prop('checked') });
+
+  $('#' + task.id + '_name' ).change(function() { task.pretty_name = $( this ).val() });
+  $('#' + task.id + '_value' ).change(function() { task.point_value = $( this ).val() });
 
   $('#assignee_img_' + task.id).click(function(event) {
     $( '#assigneeDialog' ).dialog({
@@ -221,26 +227,26 @@ function createCard(section, task) {
     });
     selectUser(task);
   });
+
+  $('#' + task.id ).change(function(event) { updateTask(task) });
 }
 
 function updateTask(task) {
-  // save changes to the text
-  var taskName = $('#' + task.id + '_name' ).val();
-  var taskValue = $('#' + task.id + '_value' ).val();
-  var taskStatus = $('#' + task.id + '_close' ).prop('checked');
-  if (taskValue) {
-    taskName = '[' + taskValue + '] ' + taskName;
+  var taskName = task.pretty_name;
+  if (task.point_value) {
+    taskName = '[' + task.point_value + '] ' + task.pretty_name;
   }
+  console.log('Updating task ' + task.id);
   return client.tasks.update(
     task.id,
     {
       'name': taskName,
-      'completed': taskStatus,
+      'completed': task.completed,
     });
 }
 
 function updateAssignee(task) {
-  console.log('updating task ' + task.id);
+  console.log('Updating task assignee ' + task.id);
   $('#assignee_img_' + task.id).attr("src", getUserImage(task.assignee));
   return client.tasks.update(
     task.id,

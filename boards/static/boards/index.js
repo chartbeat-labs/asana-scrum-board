@@ -130,6 +130,36 @@ function addTask(task, currentSection, projectId) {
   return currentSection;
 }
 
+// Defines the current card being dragged over
+var taskDropTarget;
+
+function removeDropShadow() {
+  if (taskDropTarget) {
+    taskDropTarget = null;
+    $('#dropShadow').remove();
+  }
+}
+
+function addDropShadow(node, method) {
+  var dropShadow = "<div id='dropShadow' class='card shadow'></div>"
+
+  if (method === 'append') {
+    $(node).append(dropShadow);
+  } else if (method === 'before') {
+    $(node).before(dropShadow);
+  } else {
+    return;
+  }
+
+  taskDropTarget = node;
+
+  $('#dropShadow').bind('dragover', function(event) {
+    // Allow cards to be dropped onto the shadow
+    event.stopPropagation();
+    event.preventDefault();
+  });
+}
+
 function createCard(section, task) {
   // strip out the bracketed number and show that separately
   var taskAry = /(.*)\[([^\]]*)\]\s*(.*)/.exec(task.name);
@@ -196,7 +226,33 @@ function createCard(section, task) {
   });
   $('#' + task.id ).bind('dragend', function(event) {
     this.style.opacity = '1.0';
+
+    // Remove any existent drop shadow when done dragging
+    if (taskDropTarget) {
+      removeDropShadow();
+    }
   });
+
+  $('#' + task.id ).bind('dragenter', function(event) {
+    // Determine the card being dragged over
+    var target;
+    if ($(event.target).hasClass('card')) {
+      target = event.target;
+    } else if ($(event.target).parents('.card')) {
+      target = $(event.target).parents('.card').get(0);
+    }
+
+    // Remove the drop shadow if dragging over a different card
+    if (taskDropTarget && target !== taskDropTarget) {
+      removeDropShadow();
+    }
+
+    // Add drop shadow if none exists
+    if (!taskDropTarget) {
+      addDropShadow(target, 'before');
+    }
+  });
+
   /* This isn't really working as expected.
    * The hiding works the first time you pass over it but
    * it doesn't turn visible thereafter.  I think it's
@@ -262,27 +318,36 @@ function createColumn(projectId, section) {
       + '</td>');
   $('#' + section.id).bind('dragover', function(event) {
     event.preventDefault();
+    if (taskDropTarget && taskDropTarget != this) {
+      removeDropShadow();
+    }
+    if (!taskDropTarget) {
+      addDropShadow(this, 'append');
+    }
     // event.originalEvent.dataTransfer.dropEffect = 'move';
   });
 
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
   $('#' + section.id).bind('drop', function(event) {
-    // don't try dragging onto the existing column
-    if (this != dragSourceColumn) {
-      var notecard = event.originalEvent.dataTransfer.getData("text/plain");
-      event.target.appendChild(document.getElementById(notecard));
-      event.preventDefault();
-      targetSectionId = this.id;
-      // add to new project/section
-      client.tasks.addProject(
-        notecard,
-        {
-          'section': targetSectionId,
-          'insertBefore': null,
-          'project': projectId,
-        });
+    var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+    // Object specifying where in the project this task should be placed
+    var targetProject = {
+      'project': projectId
+    };
+    // Add card to new column, before the task dragged over if applicable
+    if (taskDropTarget && taskDropTarget != this) {
+      targetProject['insert_before'] = $(taskDropTarget).attr("id");
+      $(taskDropTarget).before(document.getElementById(notecard));
+    } else {
+      targetProject['section'] = this.id;
+      $(this).append(document.getElementById(notecard));
     }
+    event.preventDefault();
+    // add to new project/section
+    client.tasks.addProject(
+      notecard,
+      targetProject);
   });
 }
 

@@ -119,6 +119,12 @@ table {
     position: relative;  // this allows the .cardValue position to be relative to this element
 }
 
+.card.shadow {
+    background-color: darkgray;
+    border: none;
+    opacity: 0.1;
+}
+
 .cardTitle
 {
     // background-color: rgb(255,255,255);

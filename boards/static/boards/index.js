@@ -151,17 +151,15 @@ function createCard(section, task) {
   var tags = '';
   if (task.tags) {
     tags = task.tags.map(function(tag){
-      var colorStyle = ''
+      var colorClass = ''
       if (tag.color) {
-        colorStyle = 'style="background-color: '
-          + tag.color
-          + '; border-color: '
-          + tag.color
-          + ';"';
+        colorClass = tag.color;
+      } else {
+        colorClass = 'no-color';
       }
-      return '<span class="tag" '
-        + colorStyle
-        + '>'
+      return '<span class="'
+        + colorClass
+        + ' tag">'
         + tag.name
         + '<a class="tag_x">x</a>'
         + '</span>'
@@ -403,7 +401,7 @@ function setupDemo() {
       id: 2,
       assignee: user,
       completed: true,
-      tags: [ { id: 10002, name: 'bug', color: 'rgb(246,114,114)' } ]
+      tags: [ { id: 10002, name: 'bug', color: 'light-yellow' } ]
     },
     {
       name: '[13] Learn Python',
@@ -423,6 +421,52 @@ function setupDemo() {
       assignee: user,
     },
     {
+      name: '[1] Lorum ipsum bacon dolar.',
+      id: 200,
+      assignee: user,
+      tags: [ { id: 10001, name: 'orange', color: 'dark-orange' } ]
+    },
+    {
+      name: '[1] Lorum ipsum bacon dolar.',
+      id: 201,
+      assignee: user,
+      tags: [ { id: 10001, name: 'purple', color: 'dark-purple' } ]
+    },
+    {
+      name: '[1] Lorum ipsum bacon dolar.',
+      id: 202,
+      assignee: user,
+      tags: [ { id: 10001, name: 'gray', color: 'dark-warm-gray' } ]
+    },
+    {
+      name: '[1] Lorum ipsum bacon dolar.',
+      id: 203,
+      assignee: user,
+      tags: [ { id: 10001, name: 'lpink', color: 'light-pink' } ]
+    },
+    {
+      name: '[1] Lorum ipsum bacon dolar.',
+      id: 204,
+      assignee: user,
+      tags: [
+        { id: 10001, name: 'lgreen', color: 'light-green' },
+        { id: 10001, name: 'lyellow', color: 'light-yellow' },
+        { id: 10001, name: 'lorange', color: 'light-orange' },
+        { id: 10001, name: 'lpurple', color: 'light-purple' },
+        { id: 10001, name: 'lwarm-gray', color: 'light-warm-gray' },
+      ]
+    },
+    {
+      name: '[1] Lorum ipsum bacon dolar.',
+      id: 205,
+      assignee: user,
+      tags: [
+        { id: 10001, name: 'lblue', color: 'light-blue' },
+        { id: 10001, name: 'lred', color: 'light-red' },
+        { id: 10001, name: 'lteal', color: 'light-teal' },
+      ]
+    },
+    {
       name: 'In Progress:',
       id: 3,
       assignee: user,
@@ -431,6 +475,7 @@ function setupDemo() {
       name: '[3] Learn Django',
       id: 4,
       assignee: user,
+      tags: [ { id: 10001, name: 'brown', color: 'dark-brown' } ]
     },
     {
       name: 'To Do:',
@@ -442,35 +487,39 @@ function setupDemo() {
       id: 6,
       assignee: user,
       tags: [
-        { id: 10001, name: 'blocker', color: 'light-yellow' },
-        { id: 10002, name: 'bug', color: 'rgb(246,114,114)' },
+        { id: 10001, name: 'blocker', color: 'dark-pink' },
+        { id: 10002, name: 'bug', color: 'light-yellow' },
       ]
     },
     {
       name: '[.5] Lorum ipsum bacon dolar.',
       id: 7,
       assignee: user,
-      tags: [ { id: 10001, name: 'blocker', color: 'light-yellow' } ]
+      tags: [ { id: 10001, name: 'blocker', color: 'dark-pink' } ]
     },
     {
       name: '[11] Learn HTML5',
       id: 9,
       assignee: user,
+      tags: [ { id: 10001, name: 'green', color: 'dark-green' } ]
     },
     {
       name: '[8] Learn Angular',
       id: 11,
       assignee: user,
+      tags: [ { id: 10001, name: 'blue', color: 'dark-blue' } ]
     },
     {
       name: '[8] Learn CSS',
       id: 12,
       assignee: user,
+      tags: [ { id: 10001, name: 'red', color: 'dark-red' } ]
     },
     {
       name: '[3] Learn HTML5',
       id: 13,
       assignee: user,
+      tags: [ { id: 10001, name: 'teal', color: 'dark-teal' } ]
     },
   ];
   var currentSection;

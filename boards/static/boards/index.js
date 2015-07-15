@@ -5,6 +5,7 @@ var dragSourceColumn;
 var currentWorkspace;
 var currentUser;
 var currentProject;
+var allTasks = {};
 var CLIENT_ID = 35463866756659;
 var REDIRECT_URI = 'http://127.0.0.1:8000/static/boards/login.html';
 var PHOTO_SIZE = 'image_27x27';
@@ -53,6 +54,7 @@ function initBoard(project) {
   var currentTasks = [];
   var sections = [];
   var numSections = 0;
+  allTasks = {};
   preBoardSetup();
 
   var userId = currentUser.id;
@@ -72,6 +74,7 @@ function initBoard(project) {
         currentSection = newSection;
       }
       currentTasks.push(task);
+      allTasks[task.id] = task;
     })
 	if(numSections == 1){
 		//Add some more default columns
@@ -127,9 +130,48 @@ function preBoardSetup() {
   });
 }
 
+
+// returns the task associated with a child element of a card
+function getTaskFromElement(child) {
+  return allTasks[$( child ).closest('.card').prop('id')];
+}
+
 function postBoardSetup() {
-    // renderChart(project, currentTasks);
-    $(document).tooltip({position: { my: "left top+5", at: "center-40 bottom", collision: "flipfit" }});
+  // renderChart(project, currentTasks);
+  $(document).tooltip({position: { my: "left top+5", at: "center-40 bottom", collision: "flipfit" }});
+
+  // handle card updates
+
+  $('.tagRemove').click(function() {
+    task = getTaskFromElement(this);
+    tagElement = $( this ).closest('.tag');
+    removeTag(task, tagElement.prop('id'));
+    tagElement.remove();
+  });
+  $('.cardComplete').change(function() {
+    getTaskFromElement(this).completed = $( this ).prop('checked');
+  });
+  $('.cardTitle').change(function() {
+    getTaskFromElement(this).pretty_name = $( this ).val();
+  });
+  $('.cardValue').change(function() {
+    getTaskFromElement(this).point_value = $( this ).val();
+  });
+  $('.card').change(function() {
+    updateTask(getTaskFromElement(this));
+  });
+  $('.cardAssignee').click(function() {
+    $( '#assigneeDialog' ).dialog({
+      position: {
+        my: "top+5",
+        at: "center",
+        of: $( this ).closest('.card'),
+        collision: "flipfit"
+      },
+    });
+    selectUser(getTaskFromElement(this));
+  });
+
 }
 
 function addTask(task, currentSection, projectId) {
@@ -208,14 +250,16 @@ function createCard(section, task) {
       }
       return '<span class="'
         + colorClass
-        + ' tag">'
+        + ' tag" id="'
+        + tag.id
+        + '">'
         + tag.name
-        + '<a class="tag_x">x</a>'
+        + '<a href="#" class="tagRemove">x</a>'
         + '</span>'
     }).join('');
   }
 
-  $('#' + section.id).append(
+  var card = $('#' + section.id).append(
       '<div class="card" draggable="true" id="'
       + task.id + '">'
       + '<div class="cardAssignee" >'
@@ -223,21 +267,21 @@ function createCard(section, task) {
       + getUserImage(task.assignee)
       + '" title="Click to assign"/>'
       + '</div>'
-      + '<textarea class="cardTitle" id="'
-      + task.id + '_name' + '">'
+      + '<textarea class="cardTitle">'
       + taskName
       + '</textarea>'
       + '<span class="cardWidgets">'
-      + '<input type="checkbox" id="'
-      + task.id + '_close' + '" />'
-      + '<textarea class="cardValue" id="'
-      + task.id + '_value' + '">'
+      + '<input class="cardComplete" type="checkbox" />'
+      + '<textarea class="cardValue" >'
       + taskValue
       + '</textarea>'
       + tags
       + '</span>'
       + '</div>'
       );
+  card.find('.cardComplete').prop('checked', task.completed);
+  // $('#' + task.id + '_close').prop('checked', task.completed);
+
   $('#' + task.id ).bind('dragstart', function(event) {
     event.originalEvent.dataTransfer.setData("text/plain", event.target.getAttribute('id'));
     this.style.opacity = '0.4';
@@ -287,23 +331,6 @@ function createCard(section, task) {
     }
   });
   */
-
-  $('#' + task.id + '_close').prop('checked', task.completed);
-
-  // Handle changes to task properties here
-  $('#' + task.id + '_close').change(function() { task.completed = $( this ).prop('checked') });
-
-  $('#' + task.id + '_name' ).change(function() { task.pretty_name = $( this ).val() });
-  $('#' + task.id + '_value' ).change(function() { task.point_value = $( this ).val() });
-
-  $('#assignee_img_' + task.id).click(function(event) {
-    $( '#assigneeDialog' ).dialog({
-      position: {my: "top+5", at: "center", of: '#' + task.id, collision: "flipfit" },
-    });
-    selectUser(task);
-  });
-
-  $('#' + task.id ).change(function(event) { updateTask(task) });
 }
 
 function updateTask(task) {
@@ -330,6 +357,15 @@ function updateAssignee(task) {
     });
 }
 
+function removeTag(task, tagId) {
+  console.log('Removing tag from task ' + task.id + ' tag=' + tagId);
+  return client.tasks.removeTag(
+    task.id,
+    {
+      'tag': tagId,
+    });
+}
+
 function createColumn(projectId, section) {
   columnName = section.name.replace(':', '');
   $('#board').prepend( '<td class="column" id="' + section.id + '">'
@@ -348,7 +384,7 @@ function createColumn(projectId, section) {
   bindDropEventToColumn(projectId,section.id)
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
-  
+
 }
 
 function bindDropEventToColumn(projectId,sectionId){
@@ -370,7 +406,7 @@ function bindDropEventToColumn(projectId,sectionId){
 	  //Add section if necessary and move card in asana
       event.preventDefault();
   	  if(this.id < 0){
-  		  //User dragged card into a new section, need to create  
+  		  //User dragged card into a new section, need to create
   	  	  addSectionInAsana(findDefaultColumnName(this.id),notecard,targetProject,this.id);
   	  }else{
           // add to new project/section
@@ -386,7 +422,7 @@ function findDefaultColumnName(defaultColumnId){
 		}
 	}
 	return;
-	
+
 }
 
 function addSectionInAsana(sectionName,notecard,targetProject,oldSectionId){
@@ -454,10 +490,11 @@ function selectUser(task){
       }, function(reason) {
         console.log('Exception: ' + reason);
       }).finally(function(user){
-        task.assignee = currentUser;
         updateAssignee(task);
         $( '#assigneeDialog' ).dialog("close");
-        $('#assignee_popup_typeahead_input').autocomplete('destroy');
+        // not sure what this does, i probably copied it from some sample code.
+        // However, itstarted getting an exception that destroy couldn't be called on an empty object.
+        // $('#assignee_popup_typeahead_input').autocomplete('destroy');
       });
   });
 }
@@ -672,6 +709,7 @@ function setupDemo() {
         sections.push(newSection);
         currentSection = newSection;
       }
+      allTasks[task.id] = task;
   });
   postBoardSetup();
 }

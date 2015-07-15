@@ -352,7 +352,7 @@ function createColumn(projectId, section) {
 }
 
 function bindDropEventToColumn(projectId,sectionId){
-    $('#' + section.id).bind('drop', function(event) {
+    $('#' + sectionId).bind('drop', function(event) {
       var notecard = event.originalEvent.dataTransfer.getData("text/plain");
       // Object specifying where in the project this task should be placed
       var targetProject = {
@@ -369,14 +369,13 @@ function bindDropEventToColumn(projectId,sectionId){
 	  //Asana api calls
 	  //Add section if necessary and move card in asana
       event.preventDefault();
-  	  if(targetSectionId < 0){
+  	  if(this.id < 0){
   		  //User dragged card into a new section, need to create  
-  	  	  addSectionInAsana(findDefaultColumnName(this.id),notecard,targetProject);
+  	  	  addSectionInAsana(findDefaultColumnName(this.id),notecard,targetProject,this.id);
   	  }else{
           // add to new project/section
           moveTaskInAsana(notecard,targetProject);
   	  }
-      moveTaskInAsana(notecard,targetProject);
     });
 }
 
@@ -390,7 +389,7 @@ function findDefaultColumnName(defaultColumnId){
 	
 }
 
-function addSectionInAsana(sectionName,notecard,targetProject){
+function addSectionInAsana(sectionName,notecard,targetProject,oldSectionId){
 	console.log('Adding section name:' + sectionName);
   	client.tasks.create(
 		{
@@ -406,7 +405,7 @@ function addSectionInAsana(sectionName,notecard,targetProject){
 	   moveTaskInAsana(notecard,targetProject)
 	   //Change id in column html id and rebind drop event
 	   $('#' + oldSectionId).attr("id",section.id);
-	   bindDropEventToColumn(section.id)
+	   bindDropEventToColumn(targetProject['project'],section.id)
 	   
        return section;
       }, function(reason) {

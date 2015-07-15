@@ -4,9 +4,13 @@
 var dragSourceColumn;
 var currentWorkspace;
 var currentUser;
+var currentProject;
 var CLIENT_ID = 35463866756659;
 var REDIRECT_URI = 'http://127.0.0.1:8000/static/boards/login.html';
 var PHOTO_SIZE = 'image_27x27';
+
+var DEFAULT_COLUMNS = [{name: 'To Do:', id: -1},{name: 'In Progress:', id: -2},{name: 'Done:', id: -3}];
+
 // Create a client.
 var client = Asana.Client.create({
   clientId: CLIENT_ID,
@@ -48,6 +52,7 @@ function initBoard(project) {
   var currentSection;
   var currentTasks = [];
   var sections = [];
+  var numSections = 0;
   preBoardSetup();
 
   var userId = currentUser.id;
@@ -62,11 +67,20 @@ function initBoard(project) {
     collection.stream().on('data', function(task) {
       newSection = addTask(task, currentSection, project.id);
       if (newSection !== currentSection) {
+		numSections++;
         sections.push(newSection);
         currentSection = newSection;
       }
       currentTasks.push(task);
     })
+	if(numSections == 1){
+		//Add some more default columns
+	    for(var i = 0; i < DEFAULT_COLUMNS.length; i++){
+	        if(currentSection.name != DEFAULT_COLUMNS[i].name){
+		        createColumn(project.id, DEFAULT_COLUMNS[i]);
+			}
+		}
+	}
   })
   .finally(function(){
     postBoardSetup();
@@ -125,6 +139,11 @@ function addTask(task, currentSection, projectId) {
     createColumn(projectId, currentSection);
   } else {
     // we're a task
+	if (currentSection === undefined){
+		//There is no current section
+		currentSection = DEFAULT_COLUMNS[0];
+		createColumn(projectId, currentSection);
+	}
     createCard(currentSection, task);
   }
   return currentSection;
@@ -258,26 +277,70 @@ function createColumn(projectId, section) {
     event.preventDefault();
     // event.originalEvent.dataTransfer.dropEffect = 'move';
   });
-
+  bindDropEventToColumn(projectId,section.id)
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
-  $('#' + section.id).bind('drop', function(event) {
-    // don't try dragging onto the existing column
-    if (this != dragSourceColumn) {
-      var notecard = event.originalEvent.dataTransfer.getData("text/plain");
-      event.target.appendChild(document.getElementById(notecard));
-      event.preventDefault();
-      targetSectionId = this.id;
-      // add to new project/section
-      client.tasks.addProject(
-        notecard,
-        {
-          'section': targetSectionId,
-          'insertBefore': null,
-          'project': projectId,
-        });
-    }
-  });
+  
+}
+
+function bindDropEventToColumn(projectId,sectionId){
+    $('#' + sectionId).bind('drop', function(event) {
+      // don't try dragging onto the existing column
+      if (this != dragSourceColumn) {
+        var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+        event.target.appendChild(document.getElementById(notecard));
+        event.preventDefault();
+        targetSectionId = this.id;
+	  	  if(targetSectionId < 0){
+	  		  //User dragged card into a new section, need to create  
+	  	  	  addSectionInAsana(findDefaultColumnName(targetSectionId),notecard,targetSectionId);
+	  	  }else{
+	          // add to new project/section
+	          moveTaskInAsana(projectId,notecard,targetSectionId)
+	  	  }
+      }
+    });
+}
+
+function findDefaultColumnName(defaultColumnId){
+    for(var i = 0; i < DEFAULT_COLUMNS.length; i++){
+        if(DEFAULT_COLUMNS[i].id == defaultColumnId){
+	        return DEFAULT_COLUMNS[i].name;
+		}
+	}
+	return;
+	
+}
+
+function addSectionInAsana(sectionName,notecard,oldSectionId){
+	console.log('Adding section name:' + sectionName);
+  	client.tasks.create(
+		{
+			'name':sectionName,
+			'projects':[currentProject.id],
+			'workspace':currentWorkspace.id
+		}
+	).then(function(section) {
+       console.log('New section id:' + section.id);
+	   moveTaskInAsana(currentProject.id,notecard,section.id)
+	   //Change id in column html id and rebind drop event
+	   $('#' + oldSectionId).attr("id",section.id);
+	   bindDropEventToColumn(section.id)
+	   
+       return section;
+      }, function(reason) {
+         console.log('Exception: ' + reason);
+     });
+}
+
+function moveTaskInAsana(projectId,notecard,targetSectionId){
+    client.tasks.addProject(
+      notecard,
+      {
+        'section': targetSectionId,
+        'insertBefore': null,
+        'project': projectId,
+      });
 }
 
 function getUserImage(user) {
@@ -341,6 +404,7 @@ function selectProject(){
       }
       ).then(function(project) {
         console.log('Full project: ' + project.name + '[' + project.id + ']');
+		currentProject = project;
         initBoard(project);
       })
   });

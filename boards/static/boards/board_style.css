@@ -15,6 +15,10 @@ table {
   display: inline-block;
 }
 
+.ui-menu {
+    font-size: 12px;
+}
+
 .ui-dialog {
     font-size: 12px;
     overflow: visible;
@@ -306,22 +310,13 @@ table {
   border-color: rgb(206,197,198);
 }
 
-.typeahead,
-.tt-query,
-.tt-hint {
+.typeahead {
     width: 396px;
     height: 30px;
     padding: 8px 12px;
-    // font-size: 24px;
     line-height: 30px;
     border: 2px solid #ccc;
-    -webkit-border-radius: 8px;
-    -moz-border-radius: 8px;
-    border-radius: 8px;
     outline: none;
-}
-
-.typeahead {
     background-color: #fff;
 }
 

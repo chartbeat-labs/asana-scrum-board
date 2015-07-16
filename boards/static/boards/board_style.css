@@ -47,7 +47,7 @@ table {
 
 .hidden
 {
-    visibility: hidden;
+    display: none;
 }
 
 #board
@@ -81,6 +81,7 @@ table {
     background-color: rgb(251,251,251);
     font-size: 14px;
     vertical-align: top;
+    cursor: pointer;
 }
 
 .columnTitle
@@ -107,12 +108,31 @@ table {
     // background-repeat:repeat;
 }
 
+.cardPadding
+{
+    min-height: 10px;
+    cursor: pointer;
+    height: 100%;
+}
+
+.plus, .load
+{
+    height: 16px;
+    width: 16px;
+    padding: 10px;
+    margin: 0 auto;
+}
+
+.cardContainer
+{
+    margin: 0 10px;
+}
+
 .card
 {
     background-color: rgb(255,255,255);
     cursor: move;
     border: 1px solid black;
-    margin: 10px;
     min-height:60px;
     font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
     font-size: 12px;
@@ -123,6 +143,7 @@ table {
     background-color: darkgray;
     border: none;
     opacity: 0.1;
+    margin: 10px 10px 0 10px;
 }
 
 .cardTitle

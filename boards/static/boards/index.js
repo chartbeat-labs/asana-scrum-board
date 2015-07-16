@@ -190,7 +190,7 @@ function addTask(task, currentSection, projectId) {
 		currentSection = DEFAULT_COLUMNS[0];
 		createColumn(projectId, currentSection);
 	}
-    createCard(currentSection, task);
+    createCard(task, '#' + currentSection.id + ' > .plus');
   }
   return currentSection;
 }
@@ -206,7 +206,8 @@ function removeDropShadow() {
 }
 
 function addDropShadow(node, method) {
-  var dropShadow = "<div id='dropShadow' class='card shadow'></div>"
+  var dropShadow =
+    '<div id="dropShadow" class="cardContainer card shadow"></div>';
 
   if (method === 'append') {
     $(node).append(dropShadow);
@@ -242,7 +243,7 @@ function newTagElement(tag) {
     + '</span>'
 }
 
-function createCard(section, task) {
+function createCard(task, beforeCard) {
   // strip out the bracketed number and show that separately
   var taskAry = /(.*)\[([^\]]*)\]\s*(.*)/.exec(task.name);
   var taskName = '';
@@ -267,9 +268,18 @@ function createCard(section, task) {
     }).join('');
   }
 
-  var card = $('#' + section.id).append(
-      '<div class="card" draggable="true" id="'
+  var card = $(beforeCard).before(
+      '<div class="cardContainer" draggable="true" id="'
       + task.id + '">'
+      + '<div class="cardPadding">'
+      + '<div class="plus hidden">'
+      + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
+      + '<path d="M2 1 h1 v1 h1 v1 h-1 v1 h-1 v-1 h-1 v-1 h1 z" /></svg></div>'
+      + '<div class="load hidden">'
+      + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
+      + '<circle cx="1" cy="1" r="1" /></svg></div>'
+      + '</div>'
+      + '<div class="card">'
       + '<div class="cardAssignee" >'
       + '<img id="assignee_img_' + task.id + '" src="'
       + getUserImage(task.assignee)
@@ -286,6 +296,7 @@ function createCard(section, task) {
       + tags
       + '<a href="#" class="tagAdd">+</a>'
       + '</span>'
+      + '</div>'
       + '</div>'
       );
   card.find('.cardComplete').prop('checked', task.completed);
@@ -308,10 +319,10 @@ function createCard(section, task) {
   $('#' + task.id ).bind('dragenter', function(event) {
     // Determine the card being dragged over
     var target;
-    if ($(event.target).hasClass('card')) {
+    if ($(event.target).hasClass('cardContainer')) {
       target = event.target;
-    } else if ($(event.target).parents('.card')) {
-      target = $(event.target).parents('.card').get(0);
+    } else if ($(event.target).parents('.cardContainer')) {
+      target = $(event.target).parents('.cardContainer').get(0);
     }
 
     // Remove the drop shadow if dragging over a different card
@@ -323,6 +334,21 @@ function createCard(section, task) {
     if (!taskDropTarget) {
       addDropShadow(target, 'before');
     }
+  });
+
+  addNewCardHandlers('#' + task.id + ' > .cardPadding',
+                     '#' + task.id,
+                     {'insert_before': task.id});
+
+  // Add/remove plus icon from the resident column so it does not appear
+  // when mouse is over a card
+  $('#' + task.id).bind('mouseenter', function(event) {
+    event.stopPropagation();
+    $(this).parent().children('.plus').addClass('hidden');
+  });
+  $('#' + task.id).bind('mouseleave', function(event) {
+    event.stopPropagation();
+    $(this).parent().children('.plus').removeClass('hidden');
   });
 
   /* This isn't really working as expected.
@@ -341,6 +367,59 @@ function createCard(section, task) {
   });
   */
 }
+
+
+function addNewCardHandlers(selectorString, beforeCard, projectOpts) {
+  var load = $(selectorString + ' > .load');
+  var plus = $(selectorString + ' > .plus');
+
+  // On enter, show the plus icon unless already clicked
+  $(selectorString).mouseenter(function(event) {
+    if (load.hasClass('hidden')) {
+      plus.removeClass('hidden');
+    }
+  });
+
+  // On exit, hide the plus icon
+  $(selectorString).mouseleave(function(event) {
+    plus.addClass('hidden');
+  });
+
+  // If the plus icon is showing, create new task on click
+  $(selectorString).click(function(event) {
+    event.stopPropagation();
+    if (!plus.hasClass('hidden') && load.hasClass('hidden')) {
+      // Show the hidden icon, hide the plus icon
+      load.removeClass('hidden');
+      plus.addClass('hidden');
+      // Animate the load icon
+      var lower = function() { load.animate({'opacity':0}, 1000, higher); };
+      var higher = function() { load.animate({'opacity':1}, 500, lower); };
+      lower();
+
+      // Create the task
+      client.tasks.createInWorkspace(currentWorkspace.id).then(function(new_task) {
+        var opts = $.extend(
+          {
+            'project': currentProject.id
+          },
+          projectOpts);
+        client.tasks.addProject(
+          new_task.id,
+          opts
+        ).then(function(object) {
+          // Create the card
+          createCard(new_task, beforeCard);
+        }).finally(function(){
+          // Hide the load icon
+          load.addClass('hidden');
+        });
+      });
+    }
+  });
+}
+
+
 
 function updateTask(task) {
   var taskName = task.pretty_name;
@@ -414,6 +493,12 @@ function createColumn(projectId, section) {
   columnName = section.name.replace(':', '');
   $('#board').prepend( '<td class="column" id="' + section.id + '">'
       + '<div class="columnTitle">' + columnName + '</div>'
+      + '<div class="plus hidden">'
+      + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
+      + '<path d="M2 1 h1 v1 h1 v1 h-1 v1 h-1 v-1 h-1 v-1 h1 z" /></svg></div>'
+      + '<div class="load hidden">'
+      + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
+      + '<circle cx="1" cy="1" r="1" /></svg></div>'
       + '</td>');
   $('#' + section.id).bind('dragover', function(event) {
     event.preventDefault();
@@ -425,10 +510,31 @@ function createColumn(projectId, section) {
     }
     // event.originalEvent.dataTransfer.dropEffect = 'move';
   });
+
   bindDropEventToColumn(projectId,section.id)
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
 
+  $('#' + section.id).bind('drop', function(event) {
+    var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+    // Object specifying where in the project this task should be placed
+    var targetProject = {
+      'project': projectId
+    };
+    // Add card to new column, before the task dragged over if applicable
+    if (taskDropTarget && taskDropTarget != this) {
+      targetProject['insert_before'] = $(taskDropTarget).attr("id");
+      $(taskDropTarget).before(document.getElementById(notecard));
+    } else {
+      targetProject['section'] = this.id;
+      $(this).children('.plus').before(document.getElementById(notecard));
+    }
+    event.preventDefault();
+    
+    moveTaskInAsana(notecard,targetProject);
+  });
+
+  addNewCardHandlers('#' + section.id, '#' + section.id + ' > .plus', {'section': section.id});
 }
 
 function bindDropEventToColumn(projectId,sectionId){

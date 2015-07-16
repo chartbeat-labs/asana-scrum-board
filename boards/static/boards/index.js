@@ -148,6 +148,10 @@ function postBoardSetup() {
     removeTag(task, tagElement.prop('id'));
     tagElement.remove();
   });
+  $('.tagAdd').click(function() {
+    task = getTaskFromElement(this);
+    addTag(task, this);
+  });
   $('.cardComplete').change(function() {
     getTaskFromElement(this).completed = $( this ).prop('checked');
   });
@@ -221,6 +225,23 @@ function addDropShadow(node, method) {
   });
 }
 
+function newTagElement(tag) {
+  var colorClass = ''
+  if (tag.color) {
+    colorClass = tag.color;
+  } else {
+    colorClass = 'no-color';
+  }
+  return '<span class="'
+    + colorClass
+    + ' tag" id="'
+    + tag.id
+    + '">'
+    + tag.name
+    + '<a href="#" class="tagRemove">x</a>'
+    + '</span>'
+}
+
 function createCard(section, task) {
   // strip out the bracketed number and show that separately
   var taskAry = /(.*)\[([^\]]*)\]\s*(.*)/.exec(task.name);
@@ -242,20 +263,7 @@ function createCard(section, task) {
   var tags = '';
   if (task.tags) {
     tags = task.tags.map(function(tag){
-      var colorClass = ''
-      if (tag.color) {
-        colorClass = tag.color;
-      } else {
-        colorClass = 'no-color';
-      }
-      return '<span class="'
-        + colorClass
-        + ' tag" id="'
-        + tag.id
-        + '">'
-        + tag.name
-        + '<a href="#" class="tagRemove">x</a>'
-        + '</span>'
+      return newTagElement(tag);
     }).join('');
   }
 
@@ -276,6 +284,7 @@ function createCard(section, task) {
       + taskValue
       + '</textarea>'
       + tags
+      + '<a href="#" class="tagAdd">+</a>'
       + '</span>'
       + '</div>'
       );
@@ -364,6 +373,41 @@ function removeTag(task, tagId) {
     {
       'tag': tagId,
     });
+}
+
+function addTag(task, addIconElement) {
+  // allows the user to select a tag, adds it to the task and
+  // updates the card by inserting the tag prior to addIconElement
+
+  $( addIconElement ).before('<input autocomplete="off" id="tag_typeahead_input" placeholder="tag">');
+  var tagInput = $( '#tag_typeahead_input' ).autocomplete({
+    source: tagMatcher(),
+  }).val('')
+  .on('autocompleteselect', function(ev, ui) {
+    console.log('Selection: ' + ui.item.label);
+    client.tags.findById(
+      ui.item.value,
+      {
+        opt_fields: 'id,name,color',
+      }
+      ).then(function(tag) {
+        console.log('Full tag: ' + tag.name);
+        console.log('Adding tag to task ' + task.id + ' tag=' + tag.id);
+        client.tasks.addTag(
+            task.id,
+            {
+              'tag': tag.id,
+            });
+        tagInput.before(newTagElement(tag));
+        tagInput.remove();
+      }, function(reason) {
+        console.log('Exception: ' + reason);
+      }).finally(function(){
+        // not sure what this does, i probably copied it from some sample code.
+        // However, itstarted getting an exception that destroy couldn't be called on an empty object.
+        // $('#tag_typeahead_input').autocomplete('destroy');
+      });
+  });
 }
 
 function createColumn(projectId, section) {
@@ -474,9 +518,9 @@ function selectUser(task){
   $('#assigneeDialog').dialog('open');
   $('#assignee_popup_typeahead_input').autocomplete({
     source: userMatcher(),
-  });
-  $('#assignee_popup_typeahead_input').val('');
-  $('#assignee_popup_typeahead_input').on('autocompleteselect', function(ev, ui) {
+  })
+  .val('')
+  .on('autocompleteselect', function(ev, ui) {
     console.log('Selection: ' + ui.item.label);
     client.users.findById(
       ui.item.value,
@@ -494,59 +538,55 @@ function selectUser(task){
         $( '#assigneeDialog' ).dialog("close");
         // not sure what this does, i probably copied it from some sample code.
         // However, itstarted getting an exception that destroy couldn't be called on an empty object.
-        // $('#assignee_popup_typeahead_input').autocomplete('destroy');
+        // Unhandled rejection Error: cannot call methods on autocomplete prior to initialization; attempted to call method 'destroy'
+        $('#assignee_popup_typeahead_input').autocomplete('destroy');
       });
   });
 }
 
 function selectProject(){
-  $('#projectSelector .typeahead').typeahead({
-    hint: true,
-    highlight: true,
-    minLength: 1
-  },
-  {
-    name: 'projects',
+  var projectInput = $('#projectSelector .typeahead');
+  projectInput.autocomplete({
     source: projectMatcher(),
-    display: 'name',
-  });
-  $('#projectSelector .typeahead').bind('typeahead:select', function(ev, projectCompact) {
-    console.log('Selection: ' + projectCompact.name);
+  })
+  .val('')
+  .on('autocompleteselect', function(ev, ui) {
+    console.log('Selection: ' + ui.item.label);
     client.projects.findById(
-      projectCompact.id,
+      ui.item.value,
       {
         opt_fields: 'id,name,archived,created_at,modified_at,color,notes,workspace,team',
       }
       ).then(function(project) {
         console.log('Full project: ' + project.name + '[' + project.id + ']');
-		currentProject = project;
+        currentProject = project;
         initBoard(project);
-      })
+        projectInput.val(project.name);
+      });
+    projectInput.blur();
   });
   $('#projectSelector').css("visibility", "visible");
 }
 
 var projectMatcher = function() {
-  return function(q, syncResults, asyncResults) {
-    client.workspaces.typeahead(
-        currentWorkspace.id,
-        {
-          type: 'project',
-          query: q,
-        })
-    .then(function(response) {
-      asyncResults(response.data);
-    });
-  }
+  return objectMatcher('project');
 }
 
+var tagMatcher = function() {
+  return objectMatcher('tag');
+};
+
 var userMatcher = function() {
+  return objectMatcher('user');
+};
+
+var objectMatcher = function(objectType) {
   return function(request, responseCallback) {
     console.log("Searching for " + request.term);
     client.workspaces.typeahead(
         currentWorkspace.id,
         {
-          type: 'user',
+          type: objectType,
           query: request.term,
         })
     .then(function(response) {
@@ -555,7 +595,7 @@ var userMatcher = function() {
       }));
     });
   }
-}
+};
 
 
 function setupDemo() {

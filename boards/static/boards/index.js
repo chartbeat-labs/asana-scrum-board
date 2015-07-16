@@ -6,6 +6,7 @@ var currentWorkspace;
 var currentUser;
 var currentProject;
 var allTasks = {};
+var eventsInitialized = false;
 var CLIENT_ID = 35463866756659;
 var REDIRECT_URI = 'http://127.0.0.1:8000/static/boards/login.html';
 var PHOTO_SIZE = 'image_27x27';
@@ -140,42 +141,107 @@ function postBoardSetup() {
   // renderChart(project, currentTasks);
   $(document).tooltip({position: { my: "left top+5", at: "center-40 bottom", collision: "flipfit" }});
 
-  // handle card updates
+  if (!eventsInitialized) {
+    // handle card updates
 
-  $('.tagRemove').click(function() {
-    task = getTaskFromElement(this);
-    tagElement = $( this ).closest('.tag');
-    removeTag(task, tagElement.prop('id'));
-    tagElement.remove();
-  });
-  $('.tagAdd').click(function() {
-    task = getTaskFromElement(this);
-    addTag(task, this);
-  });
-  $('.cardComplete').change(function() {
-    getTaskFromElement(this).completed = $( this ).prop('checked');
-  });
-  $('.cardTitle').change(function() {
-    getTaskFromElement(this).pretty_name = $( this ).val();
-  });
-  $('.cardValue').change(function() {
-    getTaskFromElement(this).point_value = $( this ).val();
-  });
-  $('.card').change(function() {
-    updateTask(getTaskFromElement(this));
-  });
-  $('.cardAssignee').click(function() {
-    $( '#assigneeDialog' ).dialog({
-      position: {
-        my: "top+5",
-        at: "center",
-        of: $( this ).closest('.card'),
-        collision: "flipfit"
-      },
+    $('#board').on('click', '.tagRemove', function(event) {
+      event.stopPropagation();
+      task = getTaskFromElement(this);
+      tagElement = $( this ).closest('.tag');
+      removeTag(task, tagElement.prop('id'));
+      tagElement.remove();
     });
-    selectUser(getTaskFromElement(this));
-  });
+    $('#board').on('click', '.tagAdd', function(event) {
+      event.stopPropagation();
+      task = getTaskFromElement(this);
+      addTag(task, this);
+    });
+    $('#board').on('change', '.cardComplete', function() {
+      getTaskFromElement(this).completed = $( this ).prop('checked');
+    });
+    $('#board').on('change', '.cardTitle', function() {
+      getTaskFromElement(this).pretty_name = $( this ).val();
+    });
+    $('#board').on('change', '.cardValue', function() {
+      getTaskFromElement(this).point_value = $( this ).val();
+    });
+    $('#board').on('change', '.card', function(event) {
+        console.log(event);
+      updateTask(getTaskFromElement(this));
+    });
+    $('#board').on('click', '.cardContainer', function(event) {
+      // Prevent click from causing new card to be created
+      event.stopPropagation();
+    });
+    $('#board').on('click', '.cardAssignee', function(event) {
+      event.stopPropagation();
+      $( '#assigneeDialog' ).dialog({
+        position: {
+          my: "top+5",
+          at: "center",
+          of: $( this ).closest('.card'),
+          collision: "flipfit"
+        },
+      });
+      selectUser(getTaskFromElement(this));
+    });
+    // On enter, show the plus icon unless already clicked
+    $('#board').on('mouseenter', '.cardPadding', function(event) {
+      if ($(this).children('.load').hasClass('hidden')) {
+        $(this).children('.plus').removeClass('hidden');
+      }
+    });
 
+    // On exit, hide the plus icon
+    $('#board').on('mouseleave', '.cardPadding', function(event) {
+      $(this).children('.plus').addClass('hidden');
+    });
+    // If the plus icon is showing, create new task on click
+    $('#board').on('click', '.plus', function(event) {
+      var plus = $(this);
+      var load = $(this).siblings('.load');
+      var opts = {
+        'project': currentProject.id
+      }
+      var place;
+      if ($(this).parents('.cardContainer')) {
+        id = $(this).parents('.cardContainer').children('.card').prop('id');
+        opts = $.extend(opts, {'insert_before': id}); 
+        place = $('#' + id).closest('.cardContainer');
+      } else {
+        id = $(this).parents('.column').prop('id') + ' > .plus';
+        opts = $.extend(opts, {'section': id}); 
+        place = '#' + id + ' > .plus';
+      }
+
+      event.stopPropagation();
+      if (!plus.hasClass('hidden') && load.hasClass('hidden')) {
+        // Show the hidden icon, hide the plus icon
+        load.removeClass('hidden');
+        plus.addClass('hidden');
+        // Animate the load icon
+        var lower = function() { load.animate({'opacity':0}, 1000, higher); };
+        var higher = function() { load.animate({'opacity':1}, 500, lower); };
+        lower();
+
+        // Create the task
+        client.tasks.createInWorkspace(currentWorkspace.id).then(function(new_task) {
+          client.tasks.addProject(
+            new_task.id,
+            opts
+          ).then(function(object) {
+            // Create the card
+            createCard(new_task, place);
+          }).finally(function(){
+            // Hide the load icon
+            load.addClass('hidden');
+          });
+        });
+      }
+    });
+
+    eventsInitialized = true;
+  }
 }
 
 function addTask(task, currentSection, projectId) {
@@ -269,8 +335,7 @@ function createCard(task, beforeCard) {
   }
 
   var card = $(beforeCard).before(
-      '<div class="cardContainer" draggable="true" id="'
-      + task.id + '">'
+      '<div class="cardContainer" draggable="true">'
       + '<div class="cardPadding">'
       + '<div class="plus hidden">'
       + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
@@ -279,7 +344,8 @@ function createCard(task, beforeCard) {
       + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
       + '<circle cx="1" cy="1" r="1" /></svg></div>'
       + '</div>'
-      + '<div class="card">'
+      + '<div class="card" id="'
+      + task.id + '">'
       + '<div class="cardAssignee" >'
       + '<img id="assignee_img_' + task.id + '" src="'
       + getUserImage(task.assignee)
@@ -336,6 +402,9 @@ function createCard(task, beforeCard) {
     }
   });
 
+
+
+
   addNewCardHandlers('#' + task.id + ' > .cardPadding',
                      '#' + task.id,
                      {'insert_before': task.id});
@@ -385,38 +454,7 @@ function addNewCardHandlers(selectorString, beforeCard, projectOpts) {
     plus.addClass('hidden');
   });
 
-  // If the plus icon is showing, create new task on click
-  $(selectorString).click(function(event) {
-    event.stopPropagation();
-    if (!plus.hasClass('hidden') && load.hasClass('hidden')) {
-      // Show the hidden icon, hide the plus icon
-      load.removeClass('hidden');
-      plus.addClass('hidden');
-      // Animate the load icon
-      var lower = function() { load.animate({'opacity':0}, 1000, higher); };
-      var higher = function() { load.animate({'opacity':1}, 500, lower); };
-      lower();
 
-      // Create the task
-      client.tasks.createInWorkspace(currentWorkspace.id).then(function(new_task) {
-        var opts = $.extend(
-          {
-            'project': currentProject.id
-          },
-          projectOpts);
-        client.tasks.addProject(
-          new_task.id,
-          opts
-        ).then(function(object) {
-          // Create the card
-          createCard(new_task, beforeCard);
-        }).finally(function(){
-          // Hide the load icon
-          load.addClass('hidden');
-        });
-      });
-    }
-  });
 }
 
 

@@ -142,38 +142,38 @@ function postBoardSetup() {
   $(document).tooltip({position: { my: "left top+5", at: "center-40 bottom", collision: "flipfit" }});
 
   if (!eventsInitialized) {
-    // handle card updates
-
+    /************************
+     * Card update handlers *
+     ************************/
     $('#board').on('click', '.tagRemove', function(event) {
       event.stopPropagation();
       task = getTaskFromElement(this);
       tagElement = $( this ).closest('.tag');
       removeTag(task, tagElement.prop('id'));
       tagElement.remove();
-    });
-    $('#board').on('click', '.tagAdd', function(event) {
+    })
+    .on('click', '.tagAdd', function(event) {
       event.stopPropagation();
       task = getTaskFromElement(this);
       addTag(task, this);
-    });
-    $('#board').on('change', '.cardComplete', function() {
+    })
+    .on('change', '.cardComplete', function() {
       getTaskFromElement(this).completed = $( this ).prop('checked');
-    });
-    $('#board').on('change', '.cardTitle', function() {
+    })
+    .on('change', '.cardTitle', function() {
       getTaskFromElement(this).pretty_name = $( this ).val();
-    });
-    $('#board').on('change', '.cardValue', function() {
+    })
+    .on('change', '.cardValue', function() {
       getTaskFromElement(this).point_value = $( this ).val();
-    });
-    $('#board').on('change', '.card', function(event) {
-        console.log(event);
+    })
+    .on('change', '.card', function(event) {
       updateTask(getTaskFromElement(this));
-    });
-    $('#board').on('click', '.cardContainer', function(event) {
+    })
+    .on('click', '.cardContainer', function(event) {
       // Prevent click from causing new card to be created
       event.stopPropagation();
-    });
-    $('#board').on('click', '.cardAssignee', function(event) {
+    })
+    .on('click', '.cardAssignee', function(event) {
       event.stopPropagation();
       $( '#assigneeDialog' ).dialog({
         position: {
@@ -184,33 +184,46 @@ function postBoardSetup() {
         },
       });
       selectUser(getTaskFromElement(this));
-    });
+    })
+    /************************
+     * Create task handlers *
+     ************************/
     // On enter, show the plus icon unless already clicked
-    $('#board').on('mouseenter', '.cardPadding', function(event) {
+    .on('mouseenter', '.cardPadding, .column', function(event) {
       if ($(this).children('.load').hasClass('hidden')) {
         $(this).children('.plus').removeClass('hidden');
       }
-    });
-
+    })
     // On exit, hide the plus icon
-    $('#board').on('mouseleave', '.cardPadding', function(event) {
+    .on('mouseleave', '.cardPadding, .column', function(event) {
       $(this).children('.plus').addClass('hidden');
-    });
+    })
+    // Add/remove plus icon from the resident column so it does not appear
+    // when mouse is over a card
+    .on('mouseenter', '.cardContainer', function(event) {
+      event.stopPropagation();
+      $(this).parent().children('.plus').addClass('hidden');
+    })
+    .on('mouseleave', '.cardContainer', function(event) {
+      event.stopPropagation();
+      $(this).parent().children('.plus').removeClass('hidden');
+    })
     // If the plus icon is showing, create new task on click
-    $('#board').on('click', '.plus', function(event) {
-      var plus = $(this);
-      var load = $(this).siblings('.load');
+    .on('click', '.cardPadding, .column', function(event) {
+      var plus = $(this).children('.plus');
+      var load = $(this).children('.load');
       var opts = {
         'project': currentProject.id
       }
+
       var place;
-      if ($(this).parents('.cardContainer')) {
-        id = $(this).parents('.cardContainer').children('.card').prop('id');
-        opts = $.extend(opts, {'insert_before': id});
-        place = $('#' + id).closest('.cardContainer');
+      if ($(this).hasClass('cardPadding')) {
+        id = $(this).parent().children('.card').prop('id');
+        opts['insert_before'] = id;
+        place = $('#' + id).parent();
       } else {
-        id = $(this).parents('.column').prop('id') + ' > .plus';
-        opts = $.extend(opts, {'section': id});
+        id = $(this).prop('id');
+        opts['section'] = id;
         place = '#' + id + ' > .plus';
       }
 
@@ -224,7 +237,7 @@ function postBoardSetup() {
         var higher = function() { load.animate({'opacity':1}, 500, lower); };
         lower();
 
-        // Create the task
+        // Create the task and add it to correct project
         client.tasks.createInWorkspace(currentWorkspace.id).then(function(new_task) {
           client.tasks.addProject(
             new_task.id,
@@ -232,12 +245,106 @@ function postBoardSetup() {
           ).then(function(object) {
             // Create the card
             createCard(new_task, place);
+            allTasks[new_task.id] = new_task;
           }).finally(function(){
             // Hide the load icon
             load.addClass('hidden');
           });
         });
       }
+    })
+    /**************************
+     * Drag and drop handlers *
+     **************************/
+    .on('dragstart', '.cardContainer', function(event) {
+      event.originalEvent.dataTransfer.setData(
+        "text/plain", $(event.target).children('.card').prop('id'));
+      this.style.opacity = '0.4';
+      dragSourceColumn = this.parentElement;
+    })
+    .on('dragend', '.cardContainer', function(event) {
+      this.style.opacity = '1.0';
+
+      // Remove any existent drop shadow when done dragging
+      if (taskDropTarget) {
+        removeDropShadow();
+      }
+    })
+    .on('dragenter', '.card', function(event) {
+      // Determine the card being dragged over
+      var target;
+      if ($(event.target).hasClass('shadow')) {
+        return;
+      }
+      if ($(event.target).hasClass('cardContainer')) {
+        target = event.target;
+      } else if ($(event.target).parents('.cardContainer')) {
+        target = $(event.target).parents('.cardContainer').get(0);
+      }
+
+      // Remove the drop shadow if dragging over a different card
+      if (taskDropTarget && target !== taskDropTarget) {
+        removeDropShadow();
+      }
+
+      // Add drop shadow if none exists
+      if (!taskDropTarget) {
+        addDropShadow(target, 'before');
+      }
+    })
+    .on('dragover', '.column', function(event) {
+      event.preventDefault();
+      if (taskDropTarget && taskDropTarget != this) {
+        removeDropShadow();
+      }
+      if (!taskDropTarget) {
+        addDropShadow(this, 'append');
+      }
+    })
+    .on('dragover', '#dropShadow', function(event) {
+      // Allow cards to be dropped onto the shadow
+      event.stopPropagation();
+      event.preventDefault();
+    })
+    // setup the columns to allow cards to be dropped in them.
+    // reassign the card's task to a new section when dropped.
+    .on('drop', '.column', function(event) {
+      var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+      // Object specifying where in the project this task should be placed
+      var targetProject = {
+        'project': currentProject.id
+      };
+      // Add card to new column, before the task dragged over if applicable
+      if (taskDropTarget && taskDropTarget != this) {
+        targetProject['insert_before'] = $(taskDropTarget).children('.card').prop('id');
+        $(taskDropTarget).before($('#' + notecard).parent());
+      } else {
+        targetProject['section'] = this.id;
+        $(this).children('.plus').before($('#' + notecard).parent());
+      }
+	  //Asana api calls
+	  //Add section if necessary and move card in asana
+      event.preventDefault();
+  	  if(this.id < 0){
+  		  //User dragged card into a new section, need to create
+  	  	  addSectionInAsana(findDefaultColumnName(this.id),notecard,targetProject,this.id);
+  	  } else {
+          // add to new project/section
+          // If dragging to the bottom of the same section, first fremove the section
+          if (this === dragSourceColumn && targetProject['section']) {
+            client.tasks.addProject(
+              notecard,
+              {
+                'project': currentProject.id,
+                'section' :null
+              }
+            ).then(function() {
+              moveTaskInAsana(notecard, targetProject);
+            });
+          } else {
+            moveTaskInAsana(notecard, targetProject);
+          }
+  	  }
     });
 
     eventsInitialized = true;
@@ -285,11 +392,6 @@ function addDropShadow(node, method) {
 
   taskDropTarget = node;
 
-  $('#dropShadow').bind('dragover', function(event) {
-    // Allow cards to be dropped onto the shadow
-    event.stopPropagation();
-    event.preventDefault();
-  });
 }
 
 function newTagElement(tag) {
@@ -334,7 +436,7 @@ function createCard(task, beforeCard) {
     }).join('');
   }
 
-  var card = $(beforeCard).before(
+  var card = $(
       '<div class="cardContainer" draggable="true">'
       + '<div class="cardPadding">'
       + '<div class="plus hidden">'
@@ -366,59 +468,10 @@ function createCard(task, beforeCard) {
       + '</div>'
       );
   card.find('.cardComplete').prop('checked', task.completed);
+
+  $(beforeCard).before(card);
   // $('#' + task.id + '_close').prop('checked', task.completed);
 
-  $('#' + task.id ).bind('dragstart', function(event) {
-    event.originalEvent.dataTransfer.setData("text/plain", event.target.getAttribute('id'));
-    this.style.opacity = '0.4';
-    dragSourceColumn = this.parentElement;
-  });
-  $('#' + task.id ).bind('dragend', function(event) {
-    this.style.opacity = '1.0';
-
-    // Remove any existent drop shadow when done dragging
-    if (taskDropTarget) {
-      removeDropShadow();
-    }
-  });
-
-  $('#' + task.id ).bind('dragenter', function(event) {
-    // Determine the card being dragged over
-    var target;
-    if ($(event.target).hasClass('cardContainer')) {
-      target = event.target;
-    } else if ($(event.target).parents('.cardContainer')) {
-      target = $(event.target).parents('.cardContainer').get(0);
-    }
-
-    // Remove the drop shadow if dragging over a different card
-    if (taskDropTarget && target !== taskDropTarget) {
-      removeDropShadow();
-    }
-
-    // Add drop shadow if none exists
-    if (!taskDropTarget) {
-      addDropShadow(target, 'before');
-    }
-  });
-
-
-
-
-  addNewCardHandlers('#' + task.id + ' > .cardPadding',
-                     '#' + task.id,
-                     {'insert_before': task.id});
-
-  // Add/remove plus icon from the resident column so it does not appear
-  // when mouse is over a card
-  $('#' + task.id).bind('mouseenter', function(event) {
-    event.stopPropagation();
-    $(this).parent().children('.plus').addClass('hidden');
-  });
-  $('#' + task.id).bind('mouseleave', function(event) {
-    event.stopPropagation();
-    $(this).parent().children('.plus').removeClass('hidden');
-  });
 
   /* This isn't really working as expected.
    * The hiding works the first time you pass over it but
@@ -436,27 +489,6 @@ function createCard(task, beforeCard) {
   });
   */
 }
-
-
-function addNewCardHandlers(selectorString, beforeCard, projectOpts) {
-  var load = $(selectorString + ' > .load');
-  var plus = $(selectorString + ' > .plus');
-
-  // On enter, show the plus icon unless already clicked
-  $(selectorString).mouseenter(function(event) {
-    if (load.hasClass('hidden')) {
-      plus.removeClass('hidden');
-    }
-  });
-
-  // On exit, hide the plus icon
-  $(selectorString).mouseleave(function(event) {
-    plus.addClass('hidden');
-  });
-
-
-}
-
 
 
 function updateTask(task) {
@@ -538,69 +570,9 @@ function createColumn(projectId, section) {
       + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
       + '<circle cx="1" cy="1" r="1" /></svg></div>'
       + '</td>');
-  $('#' + section.id).bind('dragover', function(event) {
-    event.preventDefault();
-    if (taskDropTarget && taskDropTarget != this) {
-      removeDropShadow();
-    }
-    if (!taskDropTarget) {
-      addDropShadow(this, 'append');
-    }
-    // event.originalEvent.dataTransfer.dropEffect = 'move';
-  });
 
-  bindDropEventToColumn(projectId,section.id)
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
-
-  $('#' + section.id).bind('drop', function(event) {
-    var notecard = event.originalEvent.dataTransfer.getData("text/plain");
-    // Object specifying where in the project this task should be placed
-    var targetProject = {
-      'project': projectId
-    };
-    // Add card to new column, before the task dragged over if applicable
-    if (taskDropTarget && taskDropTarget != this) {
-      targetProject['insert_before'] = $(taskDropTarget).attr("id");
-      $(taskDropTarget).before(document.getElementById(notecard));
-    } else {
-      targetProject['section'] = this.id;
-      $(this).children('.plus').before(document.getElementById(notecard));
-    }
-    event.preventDefault();
-
-    moveTaskInAsana(notecard,targetProject);
-  });
-
-  addNewCardHandlers('#' + section.id, '#' + section.id + ' > .plus', {'section': section.id});
-}
-
-function bindDropEventToColumn(projectId,sectionId){
-    $('#' + sectionId).bind('drop', function(event) {
-      var notecard = event.originalEvent.dataTransfer.getData("text/plain");
-      // Object specifying where in the project this task should be placed
-      var targetProject = {
-        'project': projectId
-      };
-      // Add card to new column, before the task dragged over if applicable
-      if (taskDropTarget && taskDropTarget != this) {
-        targetProject['insert_before'] = $(taskDropTarget).attr("id");
-        $(taskDropTarget).before(document.getElementById(notecard));
-      } else {
-        targetProject['section'] = this.id;
-        $(this).append(document.getElementById(notecard));
-      }
-	  //Asana api calls
-	  //Add section if necessary and move card in asana
-      event.preventDefault();
-  	  if(this.id < 0){
-  		  //User dragged card into a new section, need to create
-  	  	  addSectionInAsana(findDefaultColumnName(this.id),notecard,targetProject,this.id);
-  	  }else{
-          // add to new project/section
-          moveTaskInAsana(notecard,targetProject);
-  	  }
-    });
 }
 
 function findDefaultColumnName(defaultColumnId){
@@ -629,7 +601,6 @@ function addSectionInAsana(sectionName,notecard,targetProject,oldSectionId){
 	   moveTaskInAsana(notecard,targetProject)
 	   //Change id in column html id and rebind drop event
 	   $('#' + oldSectionId).attr("id",section.id);
-	   bindDropEventToColumn(targetProject['project'],section.id)
        return section;
       }, function(reason) {
          console.log('Exception: ' + reason);

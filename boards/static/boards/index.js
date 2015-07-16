@@ -206,11 +206,11 @@ function postBoardSetup() {
       var place;
       if ($(this).parents('.cardContainer')) {
         id = $(this).parents('.cardContainer').children('.card').prop('id');
-        opts = $.extend(opts, {'insert_before': id}); 
+        opts = $.extend(opts, {'insert_before': id});
         place = $('#' + id).closest('.cardContainer');
       } else {
         id = $(this).parents('.column').prop('id') + ' > .plus';
-        opts = $.extend(opts, {'section': id}); 
+        opts = $.extend(opts, {'section': id});
         place = '#' + id + ' > .plus';
       }
 
@@ -568,7 +568,7 @@ function createColumn(projectId, section) {
       $(this).children('.plus').before(document.getElementById(notecard));
     }
     event.preventDefault();
-    
+
     moveTaskInAsana(notecard,targetProject);
   });
 
@@ -653,6 +653,7 @@ function getUserImage(user) {
 }
 
 function selectUser(task){
+  console.log('Opening assign task dialog for: ' + task.id);
   $('#assignee_popup_assign_to_me_button').button()
     .click(function(event){
       task.assignee = currentUser;
@@ -664,6 +665,7 @@ function selectUser(task){
     source: userMatcher(),
   })
   .val('')
+  .off('autocompleteselect')
   .on('autocompleteselect', function(ev, ui) {
     console.log('Selection: ' + ui.item.label);
     client.users.findById(

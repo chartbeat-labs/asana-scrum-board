@@ -126,7 +126,7 @@ function addDefaultSectionsToAsana(sections,projectId){
     if(sections.length == 1){
       //Loop through our default sections, check if column was already added
       addOrderedSectionsInAsana(0,DEFAULT_COLUMNS,projectId);
-    } 
+    }
 }
 
 function updateCardSectionIds(sectionTemplate,projectId){
@@ -142,7 +142,7 @@ function addNewColumnAndSection(newColumnName,projectId){
             newColumnName = newColumnName + ':';
         }
         newSection = {'name': newColumnName, id: -1,'status':'new'};
-        addSectionInAsana(newSection,projectId, 
+        addSectionInAsana(newSection,projectId,
           function(section){
              newSection.id = newSection.new_id;
              appendColumn(projectId,newSection);
@@ -189,6 +189,12 @@ function preBoardSetup() {
     },
    */
   });
+  $( '#cardEditDialog' ).dialog({
+    // dialogClass: 'no-title',
+    autoOpen: false,
+    title: 'Edit Card',
+    width: '325px',
+  });
 }
 
 
@@ -205,7 +211,7 @@ function postBoardSetup() {
     /************************
      * Card update handlers *
      ************************/
-    $('#board').on('click', '.tagRemove', function(event) {
+    $(document.body).on('click', '.tagRemove', function(event) {
       event.stopPropagation();
       task = getTaskFromElement(this);
       tagElement = $( this ).closest('.tag');
@@ -244,6 +250,18 @@ function postBoardSetup() {
         },
       });
       selectUser(getTaskFromElement(this));
+    })
+    .on('click', '.zoomin', function(event) {
+      event.stopPropagation();
+      $( '#cardEditDialog' ).dialog({
+        position: {
+          my: "top+5",
+          at: "center",
+          of: $( this ).closest('.card'),
+          collision: "flipfit"
+        },
+      });
+      cardEdit(getTaskFromElement(this));
     })
     /************************
      * Create task handlers *
@@ -513,6 +531,7 @@ function createCard(task, beforeCard) {
       + getUserImage(task.assignee)
       + '" title="Click to assign"/>'
       + '</div>'
+      + '<span class="ui-icon ui-icon-zoomin zoomin"></span>'
       + '<textarea class="cardTitle">'
       + taskName
       + '</textarea>'
@@ -567,7 +586,9 @@ function updateTask(task) {
 
 function updateAssignee(task) {
   console.log('Updating task assignee ' + task.id);
-  $('#assignee_img_' + task.id).attr("src", getUserImage(task.assignee));
+  $('#assignee_img_' + task.id)
+    .attr("src", getUserImage(task.assignee))
+    .attr("alt", task.assignee.name);
   return client.tasks.update(
     task.id,
     {
@@ -778,6 +799,20 @@ function selectUser(task){
   });
 }
 
+function cardEdit(task){
+  console.log('Opening task edit dialog for: ' + task.id);
+  var dlog = $('#cardEditDialog');
+  dlog.find('.card').attr('id', task.id);
+  $('.closeCard').button()
+    .click(function(event){
+      dlog.dialog("close");
+    });
+  dlog.find('.cardTitle').val(task.pretty_name);
+  dlog.find('.cardValue').val(task.point_value);
+  dlog.find('.cardComplete').prop('checked', task.completed);
+  dlog.dialog('open');
+}
+
 function selectProject(){
   var projectInput = $('#projectSelector .typeahead');
   projectInput.autocomplete({
@@ -837,7 +872,7 @@ function setupDemo() {
   var projectId = 1;
   var photo = {};
   photo[PHOTO_SIZE] = 'head.png';
-  var user = { photo: photo };
+  var user = { photo: photo, name: 'bob' };
   tasks = [
     {
       name: 'Blocked:',

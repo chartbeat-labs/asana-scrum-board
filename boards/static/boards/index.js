@@ -715,24 +715,6 @@ function bindDragoverToColumn(section){
 function bindDropEventToColumn(projectId,sectionId){
     $('#' + sectionId).bind('drop', function(event) {
 		doDropCardEvent(event,this,projectId);
-        /*var notecard = event.originalEvent.dataTransfer.getData("text/plain");
-        // Object specifying where in the project this task should be placed
-        var targetProject = {
-          'project': projectId
-        };
-        // Add card to new column, before the task dragged over if applicable
-        if (taskDropTarget && taskDropTarget != this) {
-          targetProject['insert_before'] = $(taskDropTarget).attr("id");
-          $(taskDropTarget).before(document.getElementById(notecard));
-        } else {
-          targetProject['section'] = this.id;
-          $(this).append(document.getElementById(notecard));
-        }
-        //Asana api calls
-        //Add section if necessary and move card in asana
-        event.preventDefault();
-        // add to new project/section
-        moveTaskInAsana(notecard,targetProject);*/
     });
 }
 

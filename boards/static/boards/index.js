@@ -41,12 +41,28 @@ window.onload = function() {
     function(user) {
       currentUser = user;
       currentWorkspace = user.workspaces[0];
+      initbindEvents();
       selectProject();
     }, function (err) {
       console.log('Authorization needed.');
       $('#authorize').removeClass('hidden');
     }
   );
+}
+
+function initbindEvents(){
+    //Reverse order checkbox
+    $('#reverse_order').change(function() {
+        board = $('#board');
+        newBoard = board.clone();
+        newBoard.children().remove();
+        columnList = $('.column');
+        for (i=columnList.length-1;i>=0;i--){
+          currentColumn = columnList[i];
+          newBoard.append(currentColumn);
+        }
+        board.replaceWith(newBoard);
+    });
 }
 
 function authorize() {
@@ -145,7 +161,11 @@ function addNewColumnAndSection(newColumnName,projectId){
         addSectionInAsana(newSection,projectId,
           function(section){
              newSection.id = newSection.new_id;
-             appendColumn(projectId,newSection);
+             if($('#reverse_order').is(":checked")){
+               reverseOrderAppendColumn(projectId,newSection);
+             }else{
+               appendColumn(projectId,newSection);
+             }
              $('#add_column').val('');
           });
     }
@@ -383,33 +403,33 @@ function postBoardSetup() {
       // Allow cards to be dropped onto the shadow
       event.stopPropagation();
       event.preventDefault();
-    })
-    // setup the columns to allow cards to be dropped in them.
-    // reassign the card's task to a new section when dropped.
-    .on('drop', '.column', function(event) {
+  }).on('drop', '.column', function(event){
+	  doDropCardEvent(event,this,currentProject.id);
+  });
+    eventsInitialized = true;
+  }
+}
+
+function doDropCardEvent(event,targetColumn,projectId) {
       var notecard = event.originalEvent.dataTransfer.getData("text/plain");
       // Object specifying where in the project this task should be placed
       var targetProject = {
-        'project': currentProject.id
+         'project': projectId
       };
       // Add card to new column, before the task dragged over if applicable
-      if (taskDropTarget && taskDropTarget != this) {
+      if (taskDropTarget && taskDropTarget != targetColumn) {
         targetProject['insert_before'] = $(taskDropTarget).children('.card').prop('id');
         $(taskDropTarget).before($('#' + notecard).parent());
       } else {
-        targetProject['section'] = this.id;
-        $(this).children('.plus').before($('#' + notecard).parent());
+        targetProject['section'] = targetColumn.id;
+		//alert(targetColumn.id);
+        $(targetColumn).children('.plus').before($('#' + notecard).parent());
       }
 	  //Asana api calls
-	  //Add section if necessary and move card in asana
       event.preventDefault();
-  	  if(this.id < 0){
-  		  //User dragged card into a new section, need to create
-  	  	  addSectionInAsana(findDefaultColumnName(this.id),notecard,targetProject,this.id);
-  	  } else {
           // add to new project/section
           // If dragging to the bottom of the same section, first fremove the section
-          if (this === dragSourceColumn && targetProject['section']) {
+          if (targetColumn === dragSourceColumn && targetProject['section']) {
             client.tasks.addProject(
               notecard,
               {
@@ -422,12 +442,9 @@ function postBoardSetup() {
           } else {
             moveTaskInAsana(notecard, targetProject);
           }
-  	  }
-    });
+    }
 
-    eventsInitialized = true;
-  }
-}
+
 
 function addTask(task, currentSection, projectId) {
   if (':' == task.name.charAt(task.name.length-1)) {
@@ -643,31 +660,44 @@ function addTag(task, addIconElement) {
 function appendColumn(projectId,section){
 	console.log('Appending Column');
     columnName = section.name.replace(':', '');
-    $('#add_column_cell').before( '<td class="column" id="' + section.id + '">'
-    + '<div class="columnTitle">' + columnName + '</div>'
-    + '</td>');
+	$('#add_column_cell').before(createNewColumnCode(projectId,section));
     bindDragoverToColumn(section);
     bindDropEventToColumn(projectId,section.id);
     // setup the columns to allow cards to be dropped in them.
     // reassign the card's task to a new section when dropped.
 }
+
+function reverseOrderAppendColumn(projectId,section){
+console.log('Appending Column');
+    columnName = section.name.replace(':', '');
+    $('#add_column_cell').after(createNewColumnCode(projectId,section));
+    bindDragoverToColumn(section);
+    bindDropEventToColumn(projectId,section.id);
+    // setup the columns to allow cards to be dropped in them.
+    // reassign the card's task to a new section when dropped.
+}
+
 function prependColumn(projectId, section) {
   console.log('Prepending Column');
-  columnName = section.name.replace(':', '');
-  $('#board').prepend( '<td class="column" id="' + section.id + '">'
-      + '<div class="columnTitle">' + columnName + '</div>'
-      + '<div class="plus hidden">'
-      + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
-      + '<path d="M2 1 h1 v1 h1 v1 h-1 v1 h-1 v-1 h-1 v-1 h1 z" /></svg></div>'
-      + '<div class="load hidden">'
-      + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
-      + '<circle cx="1" cy="1" r="1" /></svg></div>'
-      + '</td>');
+  $('#board').prepend(createNewColumnCode(projectId,section));
   bindDragoverToColumn(section);
   bindDropEventToColumn(projectId,section.id);
   // setup the columns to allow cards to be dropped in them.
   // reassign the card's task to a new section when dropped.
 
+}
+function createNewColumnCode(projectId,section){
+ var columnName = section.name.replace(':', '');
+ var newColumnCode = '<td class="column" id="' + section.id + '">'
+     + '<div class="columnTitle">' + columnName + '</div>'
+     + '<div class="plus hidden">'
+     + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
+     + '<path d="M2 1 h1 v1 h1 v1 h-1 v1 h-1 v-1 h-1 v-1 h1 z" /></svg></div>'
+     + '<div class="load hidden">'
+     + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
+     + '<circle cx="1" cy="1" r="1" /></svg></div>'
+     + '</td>'
+	 return newColumnCode;
 }
 function bindDragoverToColumn(section){
     $('#' + section.id).bind('dragover', function(event) {
@@ -684,7 +714,8 @@ function bindDragoverToColumn(section){
 
 function bindDropEventToColumn(projectId,sectionId){
     $('#' + sectionId).bind('drop', function(event) {
-        var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+		doDropCardEvent(event,this,projectId);
+        /*var notecard = event.originalEvent.dataTransfer.getData("text/plain");
         // Object specifying where in the project this task should be placed
         var targetProject = {
           'project': projectId
@@ -701,7 +732,7 @@ function bindDropEventToColumn(projectId,sectionId){
         //Add section if necessary and move card in asana
         event.preventDefault();
         // add to new project/section
-        moveTaskInAsana(notecard,targetProject);
+        moveTaskInAsana(notecard,targetProject);*/
     });
 }
 

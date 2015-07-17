@@ -14,24 +14,47 @@ var PHOTO_SIZE = 'image_27x27';
 var DEFAULT_COLUMNS = [{name: 'To Do:', id: -1},{name: 'In Progress:', id: -2},{name: 'Done:', id: -3}];
 
 // Create a client.
-var client = Asana.Client.create({
-  clientId: CLIENT_ID,
-  // By default, the redirect URI is the current URL, so for this example
-  // we don't actually have to pass it. We do anyway to show that you can.
-  redirectUri: REDIRECT_URI
-});
+var client = new Asana.Client(
+  new Asana.Dispatcher({handleUnauthorized : function() {return false;}}),
+  {
+    clientId: CLIENT_ID,
+    // By default, the redirect URI is the current URL, so for this example
+    // we don't actually have to pass it. We do anyway to show that you can.
+    redirectUri: REDIRECT_URI
+  }
+);
 // Configure the way we want to use Oauth. Popup flow is not a default
 // so we must indicate specifically we want that type of flow.
 client.useOauth({
-  flowType: Asana.auth.PopupFlow
+  flowType: Asana.auth.PopupFlow,
+  credentials: localStorage.asanaToken
 });
 // When `authorize` is called it will pop up a window and navigate to
 // the Asana authorization prompt. Most browsers block popups that do not
 // open in direct response to a user action, so we trigger this function
 // upon clicking a link rather than automatically.
+
+
+window.onload = function() {
+  client.users.me().then(
+    function(user) {
+      currentUser = user;
+      currentWorkspace = user.workspaces[0];
+      selectProject();
+    }, function (err) {
+      console.log('Authorization needed.');
+      $('#authorize').removeClass('hidden');
+    }
+  );
+}
+
 function authorize() {
   $('#authorize').html('Authorizing...');
-  client.authorize().then(function() {
+  client.authorize().then(function(me) {
+
+    console.log('Recieved authentication token.');
+    localStorage.asanaToken = me.dispatcher.authenticator.credentials.access_token;
+
     $('#authorize').html('Fetching profile...');
     client.users.me().then(function(user) {
       $('#authorize').html('(' + user.name + ')');

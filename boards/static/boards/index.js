@@ -103,7 +103,7 @@ function initBoard(project) {
   client.tasks.findByProject(
       project.id,
       {
-        opt_fields: 'id,name,this.assignee.name,this.assignee.photo.' + PHOTO_SIZE + ',created_at,completed_at,completed,due_on,parent,this.tags.name,this.tags.color'
+        opt_fields: 'id,name,notes,this.assignee.name,this.assignee.photo.' + PHOTO_SIZE + ',created_at,completed_at,completed,due_on,parent,this.tags.name,this.tags.color'
       })
   .then(function(collection) {
     $('#board').html('');
@@ -209,7 +209,7 @@ function preBoardSetup() {
     },
    */
   });
-  $( '#cardEditDialog' ).dialog({
+  $( '.cardEditDialog' ).dialog({
     // dialogClass: 'no-title',
     autoOpen: false,
     title: 'Edit Card',
@@ -249,6 +249,9 @@ function postBoardSetup() {
     .on('change', '.cardTitle', function() {
       getTaskFromElement(this).pretty_name = $( this ).val();
     })
+    .on('change', '.cardNotes', function() {
+      getTaskFromElement(this).notes = $( this ).val();
+    })
     .on('change', '.cardValue', function() {
       getTaskFromElement(this).point_value = $( this ).val();
     })
@@ -273,7 +276,7 @@ function postBoardSetup() {
     })
     .on('click', '.zoomin', function(event) {
       event.stopPropagation();
-      $( '#cardEditDialog' ).dialog({
+      $( '.cardEditDialog' ).dialog({
         position: {
           my: "top+5",
           at: "center",
@@ -598,13 +601,20 @@ function updateTask(task) {
     {
       'name': taskName,
       'completed': task.completed,
+      'notes': task.notes,
     });
 }
 
 function updateAssignee(task) {
   console.log('Updating task assignee ' + task.id);
+  var userImage = getUserImage(task.assignee);
+  // Update the image on the card
   $('#assignee_img_' + task.id)
-    .attr("src", getUserImage(task.assignee))
+    .attr("src", userImage)
+    .attr("alt", task.assignee.name);
+  // Update the image on the cardEditDialog
+  $('#cardAssigneeImage')
+    .attr("src", userImage)
     .attr("alt", task.assignee.name);
   return client.tasks.update(
     task.id,
@@ -814,15 +824,20 @@ function selectUser(task){
 
 function cardEdit(task){
   console.log('Opening task edit dialog for: ' + task.id);
-  var dlog = $('#cardEditDialog');
+  var dlog = $('.cardEditDialog');
   dlog.find('.card').attr('id', task.id);
   $('.closeCard').button()
     .click(function(event){
       dlog.dialog("close");
     });
   dlog.find('.cardTitle').val(task.pretty_name);
+  dlog.find('.cardNotes').val(task.notes);
   dlog.find('.cardValue').val(task.point_value);
   dlog.find('.cardComplete').prop('checked', task.completed);
+  var userImage = getUserImage(task.assignee);
+  $('#cardAssigneeImage')
+    .attr("src", userImage)
+    .attr("alt", task.assignee.name);
   dlog.dialog('open');
 }
 

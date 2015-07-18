@@ -143,6 +143,10 @@ table {
     position: relative;  // this allows the .cardValue position to be relative to this element
 }
 
+.cardEditDialog .card {
+    border:2px solid white;
+}
+
 .card.shadow {
     background-color: darkgray;
     border: none;
@@ -150,7 +154,7 @@ table {
     margin: 10px 10px 0 10px;
 }
 
-.cardTitle
+#board .cardTitle
 {
     // background-color: rgb(255,255,255);
     border:2px solid white;
@@ -158,16 +162,45 @@ table {
     width: 147px;
 }
 
-#board .cardValue
+.cardEditDialog .cardTitle
 {
-    float: right;
+    border:2px solid white;
+    width: 260px;
+    resize: vertical;
+}
 
-    // border:2px solid white;
-    // height: 100%;
+.cardEditDialog .cardNotes
+{
+    border:2px solid white;
+    width: 260px;
+    resize: vertical;
+}
+
+.dialogColumn
+{
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dialogColumnRight
+{
+    display: inline-block;
+    vertical-align: top;
+    float: right;
+}
+
+.cardValue
+{
     resize: none;
     text-align: center;
     line-height: 9px;
     width: 27px;
+    border:2px solid white;
+}
+
+#board .cardValue
+{
+    float: right;
     position: absolute;
     left: 149px;
     bottom: 0px;
@@ -176,16 +209,16 @@ table {
 
 .cardEditDialog .cardValue
 {
-    resize: none;
-    text-align: center;
-    line-height: 9px;
-    width: 27px;
 }
 
-.cardAssignee
+#board .cardAssignee
 {
     float: right;
     padding: 2px;
+}
+
+.cardEditDialog .cardAssignee
+{
 }
 
 .tag {

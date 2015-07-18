@@ -167,9 +167,18 @@ table {
     border:2px solid white;
     width: 260px;
     resize: vertical;
+    font-size: 16px;
+    font-weight: bold;
 }
 
 .cardEditDialog .cardNotes
+{
+    border:2px solid white;
+    width: 260px;
+    resize: vertical;
+}
+
+.cardEditDialog .cardComment
 {
     border:2px solid white;
     width: 260px;
@@ -227,7 +236,14 @@ table {
     border-style: solid;
 }
 
-.tagRemove {
+.cardCommentInfo
+{
+    border:2px solid white;
+    width: 260px;
+}
+
+/* TODO: This is a hack to get .tagRemove to style like we want it */
+.ui-widget-content a {
     color: white;
     padding-left: 3px;
     text-decoration: none;

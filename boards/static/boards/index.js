@@ -127,7 +127,7 @@ function initBoard(project) {
       console.log('current section name =' + currentSection.name);
       currentTasks.push(task);
       allTasks[task.id] = task;
-    })
+    });
     //If any default columns were added, add them to Asana and update the cards
     addDefaultSectionsToAsana(sections,project.id);
 	//doThis();
@@ -210,7 +210,7 @@ function preBoardSetup() {
    */
   });
   $( '.cardEditDialog' ).dialog({
-    // dialogClass: 'no-title',
+    dialogClass: 'no-title',
     autoOpen: false,
     title: 'Edit Card',
     width: '325px',
@@ -253,7 +253,11 @@ function postBoardSetup() {
       getTaskFromElement(this).notes = $( this ).val();
     })
     .on('change', '.cardValue', function() {
-      getTaskFromElement(this).point_value = $( this ).val();
+      getTaskFromElement(this).notes = $( this ).val();
+    })
+    .on('change', '.cardComment', function() {
+      event.stopPropagation();
+      addComment(getTaskFromElement(this), $( this ).val());
     })
     .on('change', '.card', function(event) {
       updateTask(getTaskFromElement(this));
@@ -527,13 +531,6 @@ function createCard(task, beforeCard) {
 
   var assigneeId = task.id + '_assignee';
 
-  var tags = '';
-  if (task.tags) {
-    tags = task.tags.map(function(tag){
-      return newTagElement(tag);
-    }).join('');
-  }
-
   var card = $(
       '<div class="cardContainer" draggable="true">'
       + '<div class="cardPadding">'
@@ -560,8 +557,6 @@ function createCard(task, beforeCard) {
       + '<textarea class="cardValue" >'
       + taskValue
       + '</textarea>'
-      + tags
-      + '<a href="#" class="tagAdd">+</a>'
       + '</span>'
       + '</div>'
       + '</div>'
@@ -589,6 +584,15 @@ function createCard(task, beforeCard) {
   */
 }
 
+
+function addComment(task, comment) {
+  console.log('Adding comment to task ' + task.id);
+  return client.tasks.addComment(
+    task.id,
+    {
+      'text': comment,
+    });
+}
 
 function updateTask(task) {
   var taskName = task.pretty_name;
@@ -833,12 +837,37 @@ function cardEdit(task){
   dlog.find('.cardTitle').val(task.pretty_name);
   dlog.find('.cardNotes').val(task.notes);
   dlog.find('.cardValue').val(task.point_value);
+  dlog.find('.cardComment').val('');
   dlog.find('.cardComplete').prop('checked', task.completed);
+  comments = dlog.find('.cardComments');
+  comments.html('Loading comments...');
+  var tags = dlog.find('.cardEditTags').html('');
+  if (task.tags) {
+    task.tags.forEach(function(tag){
+      tags.prepend(newTagElement(tag));
+    });
+  }
   var userImage = getUserImage(task.assignee);
   $('#cardAssigneeImage')
     .attr("src", userImage)
     .attr("alt", task.assignee.name);
   dlog.dialog('open');
+  client.stories.findByTask(
+      task.id,
+      {
+        opt_fields: 'id,type,html_text,this.created_by.name'
+      })
+  .then(function(collection) {
+    comments.html('');
+    collection.stream().on('data', function(story) {
+      if (story.type === 'comment') {
+        console.log(story);
+        comments.append('<div class="cardCommentInfo">'
+          + '<b>' + story.created_by.name + ': ' + '</b>'
+          + story.html_text + '</div>');
+      }
+    });
+  });
 }
 
 function selectProject(){

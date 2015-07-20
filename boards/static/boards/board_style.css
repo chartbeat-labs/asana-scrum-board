@@ -120,7 +120,19 @@ table {
     vertical-align: middle;
 }
 
-#add_column {
+.columnTitle span
+{
+    display: table-cell;
+    width: 100%;
+}
+
+.columnTitle .sectionTitle
+{
+    font-size: 14px;
+}
+
+#add_column
+{
     border: none;
     background-color: transparent;
     padding: 0;
@@ -131,6 +143,11 @@ table {
     height: 64px;
     width: 100%;
     line-height: 64px;
+}
+
+#add_column:focus
+{
+    outline: none;
 }
 
 #add_column_cell {
@@ -301,6 +318,7 @@ textarea {
     line-height: 9px;
     border: none;
     margin-right: 8px;
+    font-size: 12px;
 }
 
 #board .cardValue

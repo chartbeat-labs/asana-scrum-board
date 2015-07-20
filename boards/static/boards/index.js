@@ -109,7 +109,7 @@ function initBoard(project) {
     $('#board').html('');
     $('#board').prepend( '<td id="add_column_cell" class="column">'
     + '<div class="columnTitle">'
-    + '<textarea id="add_column" type="text" placeholder="Add a column"/>'
+    + '<input id="add_column" type="text" placeholder="Add a column"/>'
     + '</div></td>');
     $('#add_column').bind('keyup', function(event) {
         if(event.keyCode==13){
@@ -639,14 +639,15 @@ function createCard(task, beforeCard) {
 }
 
 function updateSectionPoints(card){
-    pointValueContainer = card.parent().children('.valueContainer');
+    pointValueContainer = card.parent().find('.sectionValue');
 	//alert("point value = " + pointValueContainer.text());
 	currentPoints = parseFloat(pointValueContainer.text());
+    console.log(pointValueContainer);
 	var totalPoints = 0;
 	//Loop through all children
 	card.parent().children('.cardContainer').each(function () {
 	//	alert($(this).find('.cardValue').text());
-		currentPoints = parseFloat($(this).find('.cardValue').text());
+		currentPoints = parseFloat($(this).find('.cardValue').val());
 		if(isNaN(currentPoints)){
 			currentPoints = 0;
 		}
@@ -670,6 +671,7 @@ function updateTask(task) {
   if (task.point_value) {
     task.name = '[' + task.point_value + '] ' + task.pretty_name;
   }
+  updateSectionPoints($('#'+task.id).parent());
   console.log('Updating task: ', task);
   return client.tasks.update(
     task.id,
@@ -771,10 +773,11 @@ function prependColumn(projectId, section) {
 function createNewColumnCode(projectId,section){
  var columnName = section.name.replace(':', '');
  var newColumnCode = '<td class="column" id="' + section.id + '">'
-     + '<div class="columnTitle">' + columnName + '</div>'
-     + '<div class="valueContainer"><textarea id="section_point_value" class="cardValue" >'
+     + '<div class="columnTitle"><span class="sectionTitle">'
+     + columnName + '</span>'
+     + '<span class="sectionValue">'
      + 0
-     + '</textarea></div>'
+     + '</span></div>'
      + '<div class="addCard">'
      + 'Add a card'
      + '</div>'

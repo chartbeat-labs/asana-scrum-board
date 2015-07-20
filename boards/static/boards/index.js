@@ -901,6 +901,7 @@ function selectProject(){
         opt_fields: 'id,name,archived,created_at,modified_at,color,notes,workspace,team',
       }
       ).then(function(project) {
+        project.metaData = parseProjectMetaData(project.notes);
         console.log('Project: ', project);
         currentProject = project;
         initBoard(project);
@@ -910,6 +911,48 @@ function selectProject(){
   });
   $('#projectSelector').css("visibility", "visible");
 }
+
+/**
+ * Takes a project's "notes" field and finds embedded metadata JSON. Embedded
+ * metadata is a JSON string that is delimited from other plaintext notes by the
+ * starting string "metadata =====" and then ending string "=====". As an
+ * example, if a notes field (the project "description" in Asana's web GUI)
+ * contains:
+ *
+ *     This is a project that exists just for example purposes. Blah blah blah.
+ *
+ *     metadata =====
+ *     {
+ *       "startDate": "2015-07-13",
+ *       "endDate": "2015-07-20"
+ *     }
+ *     =====
+ *
+ * The JSON blob with the start and end dates will be parsed and an object with
+ * "startDate" and "endDate" fields will be returned.
+ */
+var parseProjectMetaData = function(notes) {
+  if (!notes) {
+    return null;
+  }
+
+  // Regex to match the metadata blob. We're case-insensitive and forgiving on
+  // "metadata" vs "meta-data". We also match "at least 3" equals signs in a row
+  // to start and end the actual JSON blob. So pretty forgiving on specifics
+  // overall.
+  var metadataRegex = /meta(?: |-)?data\s*={3,}\s+([^]*?)\s+={3,}/i;
+  var match = metadataRegex.exec(notes);
+
+  if (match) {
+    try {
+      return JSON.parse(match[1]);
+    } catch(e) {
+      console.error('Error parsing metadata JSON from project description/notes', e);
+    }
+  }
+
+  return null;
+};
 
 var projectMatcher = function() {
   return objectMatcher('project');

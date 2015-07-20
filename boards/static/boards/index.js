@@ -209,6 +209,10 @@ function preBoardSetup() {
       var dialogContainer = $(this).parents('.ui-dialog')[0];
       $(document).off('click').click(function(e){closeOnOutsideClick(e, cardDialog, dialogContainer)});
     },
+    /*close: function(event){
+		alert($(this).parents('.card').attr('id'));
+        updateSectionPoints($(this).parents('.card'));
+    }*/
   });
 }
 
@@ -292,7 +296,7 @@ function postBoardSetup() {
           at: "center",
           of: $( this ).closest('.card'),
           collision: "flipfit"
-        },
+        }
       });
       cardEdit(getTaskFromElement(this));
     })
@@ -578,7 +582,7 @@ function createCard(task, beforeCard) {
 
   $(beforeCard).before(card);
   
-  updateSectionPoints(card,task.point_value);
+  updateSectionPoints(card);
   // $('#' + task.id + '_close').prop('checked', task.completed);
 
 
@@ -599,16 +603,22 @@ function createCard(task, beforeCard) {
   */
 }
 
-function updateSectionPoints(card,point_value){
+function updateSectionPoints(card){
     pointValueContainer = card.parent().children('.valueContainer');
+	//alert("point value = " + pointValueContainer.text());
 	currentPoints = parseFloat(pointValueContainer.text());
-	if(isNaN(point_value)){
-		point_value = 0;
-	}else{
-		point_value = parseFloat(point_value);
-	}
-    currentPoints = currentPoints + point_value;
-    pointValueContainer.text(currentPoints);
+	var totalPoints = 0;
+	//Loop through all children
+	card.parent().children('.cardContainer').each(function () {
+	//	alert($(this).find('.cardValue').text());
+		currentPoints = parseFloat($(this).find('.cardValue').text());
+		if(isNaN(currentPoints)){
+			currentPoints = 0;
+		}
+		totalPoints = totalPoints + currentPoints;
+	});
+	
+    pointValueContainer.text(totalPoints);
 }
 
 
@@ -625,7 +635,6 @@ function updateTask(task) {
   if (task.point_value) {
     task.name = '[' + task.point_value + '] ' + task.pretty_name;
   }
-  updateSectionPoints($('#'+task.id).parent(),task.point_value);
   console.log('Updating task: ', task);
   return client.tasks.update(
     task.id,

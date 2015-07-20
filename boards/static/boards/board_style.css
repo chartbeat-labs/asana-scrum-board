@@ -10,7 +10,7 @@
 
 @font-face {
     font-family: 'ProximaNova-Semibold';
-    src: url('fonts/pn_thin-webfont.woff') format('woff');
+    src: url('fonts/pn_bold-webfont.woff') format('woff');
 }
 
 body
@@ -117,6 +117,24 @@ table {
     border-left: 1px solid #bebebe;
     border-bottom: 1px solid #bebebe;
     margin-left: -1px;
+    vertical-align: middle;
+}
+
+#add_column {
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    font-family: 'ProximaNova-Light';
+    font-size: 12px;
+    resize: none;
+    cursor: pointer;
+    height: 64px;
+    width: 100%;
+    line-height: 64px;
+}
+
+#add_column_cell {
+    cursor: initial;
 }
 
 *[draggable=true]
@@ -148,6 +166,16 @@ table {
     width: 16px;
     padding: 10px;
     margin: 0 auto;
+}
+
+.addCard
+{
+    font-family: 'ProximaNova-Regular';
+    padding: 16px 0 0 16px;
+}
+
+.column:hover .addCard {
+    color: #39a5d8;
 }
 
 .cardContainer

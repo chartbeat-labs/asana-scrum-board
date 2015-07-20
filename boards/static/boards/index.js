@@ -621,7 +621,6 @@ function addComment(task, comment) {
 }
 
 function updateTask(task) {
-  alert('updateTask');
   task.name = task.pretty_name;
   if (task.point_value) {
     task.name = '[' + task.point_value + '] ' + task.pretty_name;

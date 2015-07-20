@@ -355,6 +355,7 @@ function postBoardSetup() {
             opts
           ).then(function(object) {
             // Create the card
+            sectionCard = $(this).parent();
             createCard(new_task, place);
             allTasks[new_task.id] = new_task;
           }).finally(function(){
@@ -576,6 +577,8 @@ function createCard(task, beforeCard) {
   card.find('.cardComplete').prop('checked', task.completed);
 
   $(beforeCard).before(card);
+  
+  updateSectionPoints(card,task.point_value);
   // $('#' + task.id + '_close').prop('checked', task.completed);
 
 
@@ -596,6 +599,18 @@ function createCard(task, beforeCard) {
   */
 }
 
+function updateSectionPoints(card,point_value){
+    pointValueContainer = card.parent().children('.valueContainer');
+	currentPoints = parseFloat(pointValueContainer.text());
+	if(isNaN(point_value)){
+		point_value = 0;
+	}else{
+		point_value = parseFloat(point_value);
+	}
+    currentPoints = currentPoints + point_value;
+    pointValueContainer.text(currentPoints);
+}
+
 
 function addComment(task, comment) {
   return client.tasks.addComment(
@@ -606,10 +621,12 @@ function addComment(task, comment) {
 }
 
 function updateTask(task) {
+  alert('updateTask');
   task.name = task.pretty_name;
   if (task.point_value) {
     task.name = '[' + task.point_value + '] ' + task.pretty_name;
   }
+  updateSectionPoints($('#'+task.id).parent(),task.point_value);
   console.log('Updating task: ', task);
   return client.tasks.update(
     task.id,
@@ -712,6 +729,9 @@ function createNewColumnCode(projectId,section){
  var columnName = section.name.replace(':', '');
  var newColumnCode = '<td class="column" id="' + section.id + '">'
      + '<div class="columnTitle">' + columnName + '</div>'
+     + '<div class="valueContainer"><textarea id="section_point_value" class="cardValue" >'
+     + 0
+     + '</textarea></div>'
      + '<div class="plus hidden">'
      + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
      + '<path d="M2 1 h1 v1 h1 v1 h-1 v1 h-1 v-1 h-1 v-1 h1 z" /></svg></div>'

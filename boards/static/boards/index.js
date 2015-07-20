@@ -107,8 +107,10 @@ function initBoard(project) {
       })
   .then(function(collection) {
     $('#board').html('');
-    $('#board').prepend( '<td id="add_column_cell" class="column" >'
-    + '<input id="add_column" type="text" placeholder="new column">' +'</td>');
+    $('#board').prepend( '<td id="add_column_cell" class="column">'
+    + '<div class="columnTitle">'
+    + '<textarea id="add_column" type="text" placeholder="Add a column"/>'
+    + '</div></td>');
     $('#add_column').bind('keyup', function(event) {
         if(event.keyCode==13){
             //Enter key up
@@ -335,7 +337,7 @@ function postBoardSetup() {
       } else {
         id = $(this).prop('id');
         opts['section'] = id;
-        place = '#' + id + ' > .plus';
+        place = '#' + id + ' > .addCard';
       }
 
       event.stopPropagation();
@@ -357,6 +359,39 @@ function postBoardSetup() {
             // Create the card
             sectionCard = $(this).parent();
             createCard(new_task, place);
+            allTasks[new_task.id] = new_task;
+          }).finally(function(){
+            // Hide the load icon
+            load.addClass('hidden');
+          });
+        });
+      }
+    })
+    .on('click', '.column', function(event) {
+      event.stopPropagation();
+
+      var load = $(this).children('.load');
+      var id = $(this).prop('id');
+      var opts = {
+        'project': currentProject.id,
+        'section': id
+      }
+
+      if (load.hasClass('hidden')) {
+        load.removeClass('hidden');
+        // Animate the load icon
+        var lower = function() { load.animate({'opacity':0}, 1000, higher); };
+        var higher = function() { load.animate({'opacity':1}, 500, lower); };
+        lower();
+
+        // Create the task and add it to correct project
+        client.tasks.createInWorkspace(currentWorkspace.id).then(function(new_task) {
+          client.tasks.addProject(
+            new_task.id,
+            opts
+          ).then(function(object) {
+            // Create the card
+            createCard(new_task, '#' + id + ' > .addCard');
             allTasks[new_task.id] = new_task;
           }).finally(function(){
             // Hide the load icon
@@ -410,7 +445,7 @@ function postBoardSetup() {
         removeDropShadow();
       }
       if (!taskDropTarget) {
-        addDropShadow(this, 'append');
+        addDropShadow($(this).children('.addCard'), 'before');
       }
     })
     .on('dragover', '#dropShadow', function(event) {
@@ -437,7 +472,7 @@ function doDropCardEvent(event,targetColumn,projectId) {
       } else {
         targetProject['section'] = targetColumn.id;
 		//alert(targetColumn.id);
-        $(targetColumn).children('.plus').before($('#' + notecard).parent());
+        $(targetColumn).children('.addCard').before($('#' + notecard).parent());
       }
 	  //Asana api calls
       event.preventDefault();
@@ -472,7 +507,7 @@ function addTask(task, currentSection, projectId) {
 		currentSection = TODO_COLUMN;
 		prependColumn(projectId, currentSection);
 	}
-    createCard(task, '#' + currentSection.id + ' > .plus');
+    createCard(task, '#' + currentSection.id + ' > .addCard');
   }
   return currentSection;
 }
@@ -731,9 +766,9 @@ function createNewColumnCode(projectId,section){
      + '<div class="valueContainer"><textarea id="section_point_value" class="cardValue" >'
      + 0
      + '</textarea></div>'
-     + '<div class="plus hidden">'
-     + '<svg class="icon" viewBox="0 0 5 5" xmlns="http://www.w3.org/2000/svg">'
-     + '<path d="M2 1 h1 v1 h1 v1 h-1 v1 h-1 v-1 h-1 v-1 h1 z" /></svg></div>'
+     + '<div class="addCard">'
+     + 'Add a card'
+     + '</div>'
      + '<div class="load hidden">'
      + '<svg class="icon" viewBox="0 0 2 2" xlmns="http://www.w3.org/2000/svg">'
      + '<circle cx="1" cy="1" r="1" /></svg></div>'
@@ -749,7 +784,7 @@ function bindDragoverToColumn(section){
         removeDropShadow();
       }
       if (!taskDropTarget) {
-        addDropShadow(this, 'append');
+        addDropShadow($(this).children('.addCard'), 'before');
       }
       // event.originalEvent.dataTransfer.dropEffect = 'move';
     });

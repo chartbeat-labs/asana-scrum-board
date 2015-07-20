@@ -171,6 +171,7 @@ table {
     font-weight: bold;
 }
 
+
 .cardEditDialog .cardNotes
 {
     border:2px solid white;
@@ -234,6 +235,8 @@ table {
     font-size: 10px;
     border-width: 2px;
     border-style: solid;
+    margin-right: 1px;
+    white-space: nowrap;
 }
 
 .cardCommentInfo
@@ -249,9 +252,22 @@ table {
     text-decoration: none;
 }
 
+.cardEditTags {
+    width: 260px;
+    border:2px solid white;
+}
+
+.cardComments {
+    border:2px solid white;
+}
+
 .tagAdd {
-    padding-left: 2px;
-    text-decoration: none;
+    display: inline-block;
+    vertical-align: bottom;
+}
+
+#tag_typeahead_input {
+    width: 40px;
 }
 
 .zoomin {

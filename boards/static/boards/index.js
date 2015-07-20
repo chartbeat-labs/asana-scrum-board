@@ -123,8 +123,8 @@ function initBoard(project) {
         numSections++;
         sections.push(newSection);
         currentSection = newSection;
+        console.log('current section: ', currentSection);
       }
-      console.log('current section name =' + currentSection.name);
       currentTasks.push(task);
       allTasks[task.id] = task;
     });
@@ -170,50 +170,45 @@ function addNewColumnAndSection(newColumnName,projectId){
           });
     }
 }
-
+var closeOnOutsideClick = function (e, dialog, dialogContainer) {
+  // when anywhere in the doc is clicked
+  var clickedOutside = true; // start searching assuming we clicked outside
+  $(e.target).parents().andSelf().each(function () { // search parents and self
+      // if the original dialog selector is the click's target or a parent of the target
+      // we have not clicked outside the box
+      if (this == dialogContainer) {
+          clickedOutside = false; // found
+          return false; // stop searching
+      }
+  });
+  if (clickedOutside) {
+    dialog.dialog("close");
+    // unbind this listener, we're done with it
+    $(document).off('click');
+  }
+}
 
 function preBoardSetup() {
   var firstOpening;
-  var dialogEl;
-  $( '#assigneeDialog' ).dialog({
-    // dialogClass: 'no-title',
+  var assigneeDialog = $( '#assigneeDialog' ).dialog({
+    dialogClass: 'no-title',
     autoOpen: false,
     title: 'Assign Task',
     width: '325px',
-  /* The first time the dialog is opened it seems to receive the click.
-   * The second times it's opened, it receives two clicks.
     open: function(e) {
-      // find the dialog element
-      dialogEl = $(this).parents('.ui-dialog')[0];
-      firstOpening = true; // the first click we get is the dialog opening, we need to ignore that one
-      $(document).click(function (e) { // when anywhere in the doc is clicked
-        if (!firstOpening) {
-          var clickedOutside = true; // start searching assuming we clicked outside
-          $(e.target).parents().andSelf().each(function () { // search parents and self
-              // if the original dialog selector is the click's target or a parent of the target
-              // we have not clicked outside the box
-              if (this == dialogEl) {
-                  clickedOutside = false; // found
-                  return false; // stop searching
-              }
-          });
-          if (clickedOutside) {
-            $( '#assigneeDialog' ).dialog("close");
-            // unbind this listener, we're done with it
-            $(document).unbind('click',arguments.callee);
-          }
-        } else {
-          firstOpening = false;
-        }
-      });
+      var dialogContainer = $(this).parents('.ui-dialog')[0];
+      $(document).off('click').click(function(e){closeOnOutsideClick(e, assigneeDialog, dialogContainer)});
     },
-   */
   });
-  $( '.cardEditDialog' ).dialog({
+  var cardDialog = $( '.cardEditDialog' ).dialog({
     dialogClass: 'no-title',
     autoOpen: false,
     title: 'Edit Card',
     width: '325px',
+    open: function(e) {
+      var dialogContainer = $(this).parents('.ui-dialog')[0];
+      $(document).off('click').click(function(e){closeOnOutsideClick(e, cardDialog, dialogContainer)});
+    },
   });
 }
 
@@ -253,7 +248,7 @@ function postBoardSetup() {
       getTaskFromElement(this).notes = $( this ).val();
     })
     .on('change', '.cardValue', function() {
-      getTaskFromElement(this).notes = $( this ).val();
+      getTaskFromElement(this).point_value = $( this ).val();
     })
     .on('change', '.cardComment', function() {
       event.stopPropagation();
@@ -277,6 +272,17 @@ function postBoardSetup() {
         },
       });
       selectUser(getTaskFromElement(this));
+    })
+    .on('card:refresh', function(event, task) {
+      var card = $( this );
+      card.find('.cardTitle').val(task.pretty_name);
+      card.find('.cardValue').val(task.point_value);
+      card.find('.cardComplete').prop('checked', task.completed);
+      var userImage = getUserImage(task.assignee);
+      // Update the image on the card
+      $('#assignee_img_' + task.id)
+        .attr("src", userImage)
+        .attr("alt", task.assignee ? task.assignee.name : 'Unassigned');
     })
     .on('click', '.zoomin', function(event) {
       event.stopPropagation();
@@ -510,7 +516,7 @@ function newTagElement(tag) {
     + '">'
     + tag.name
     + '<a href="#" class="tagRemove">x</a>'
-    + '</span>'
+    + '</span> '
 }
 
 function createCard(task, beforeCard) {
@@ -586,7 +592,7 @@ function createCard(task, beforeCard) {
 
 
 function addComment(task, comment) {
-  console.log('Adding comment to task ' + task.id);
+  console.log('Adding comment to task: ', comment, task);
   return client.tasks.addComment(
     task.id,
     {
@@ -595,40 +601,37 @@ function addComment(task, comment) {
 }
 
 function updateTask(task) {
-  var taskName = task.pretty_name;
+  task.name = task.pretty_name;
   if (task.point_value) {
-    taskName = '[' + task.point_value + '] ' + task.pretty_name;
+    task.name = '[' + task.point_value + '] ' + task.pretty_name;
   }
-  console.log('Updating task ' + task.id);
+  console.log('Updating task: ', task);
   return client.tasks.update(
     task.id,
     {
-      'name': taskName,
+      'name': task.name,
       'completed': task.completed,
       'notes': task.notes,
     });
 }
 
 function updateAssignee(task) {
-  console.log('Updating task assignee ' + task.id);
+  console.log('Updating task assignee: ', task);
+  $( '#' + task.id ).trigger('card:refresh', task);
   var userImage = getUserImage(task.assignee);
-  // Update the image on the card
-  $('#assignee_img_' + task.id)
-    .attr("src", userImage)
-    .attr("alt", task.assignee.name);
   // Update the image on the cardEditDialog
   $('#cardAssigneeImage')
     .attr("src", userImage)
-    .attr("alt", task.assignee.name);
+    .attr("alt", task.assignee ? task.assignee.name : 'Unassigned');
   return client.tasks.update(
     task.id,
     {
-      'assignee': task.assignee.id,
+      'assignee': task.assignee ? task.assignee.id : null,
     });
 }
 
 function removeTag(task, tagId) {
-  console.log('Removing tag from task ' + task.id + ' tag=' + tagId);
+  console.log('Removing tag from task: ', tagId, task);
   return client.tasks.removeTag(
     task.id,
     {
@@ -643,30 +646,30 @@ function addTag(task, addIconElement) {
   $( addIconElement ).before('<input autocomplete="off" id="tag_typeahead_input" placeholder="tag">');
   var tagInput = $( '#tag_typeahead_input' ).autocomplete({
     source: tagMatcher(),
-  }).val('')
+  })
+  .val('')
+  .focus()
+  .off('autocompleteselect')
   .on('autocompleteselect', function(ev, ui) {
-    console.log('Selection: ' + ui.item.label);
+    console.log('Selection: ', ui.item);
     client.tags.findById(
       ui.item.value,
       {
         opt_fields: 'id,name,color',
       }
       ).then(function(tag) {
-        console.log('Full tag: ' + tag.name);
-        console.log('Adding tag to task ' + task.id + ' tag=' + tag.id);
+        console.log('Adding tag to task: ', task, tag);
         client.tasks.addTag(
             task.id,
             {
               'tag': tag.id,
             });
-        tagInput.before(newTagElement(tag));
+        $('.cardTags').append(newTagElement(tag));
         tagInput.remove();
       }, function(reason) {
         console.log('Exception: ' + reason);
       }).finally(function(){
-        // not sure what this does, i probably copied it from some sample code.
-        // However, itstarted getting an exception that destroy couldn't be called on an empty object.
-        // $('#tag_typeahead_input').autocomplete('destroy');
+        $('#tag_typeahead_input').autocomplete('destroy');
       });
   });
 }
@@ -762,7 +765,7 @@ function addSectionInAsana(sectionTemplate,projectId,finallyFunction){
             'workspace':currentWorkspace.id
         }
     ).then(function(section) {
-        console.log('New section id:' + section.id);
+        console.log('New section id: ', section);
         //update sectionTemplate with new id
         sectionTemplate.new_id = section.id;
         return section;
@@ -789,45 +792,53 @@ function getUserImage(user) {
 }
 
 function selectUser(task){
-  console.log('Opening assign task dialog for: ' + task.id);
+  console.log('Opening assign task dialog for: ', task);
   $('#assignee_popup_assign_to_me_button').button()
+    .off('click')
     .click(function(event){
       task.assignee = currentUser;
       updateAssignee(task);
       $( '#assigneeDialog' ).dialog("close");
     });
-  $('#assigneeDialog').dialog('open');
-  $('#assignee_popup_typeahead_input').autocomplete({
+  var dialogInput = $('#assignee_popup_typeahead_input');
+  var assigneeDialog = $('#assigneeDialog').dialog('open')
+    .off('dialogbeforeclose')
+    .on('dialogbeforeclose', function(event, ui) {
+      if (dialogInput.val() === '') {
+        task.assignee = null;
+        updateAssignee(task);
+      }
+    });
+  dialogInput.autocomplete({
     source: userMatcher(),
   })
-  .val('')
+  .val(task.assignee ? task.assignee.name : '')
+  .select()
   .off('autocompleteselect')
   .on('autocompleteselect', function(ev, ui) {
-    console.log('Selection: ' + ui.item.label);
+    console.log('Selection: ', ui.item);
+    assigneeDialog.dialog('close');
+    dialogInput.autocomplete('destroy');
+    // TODO change the assignee to an 'updating' icon
     client.users.findById(
       ui.item.value,
       {
         opt_fields: 'id,name,this.photo.' + PHOTO_SIZE,
       }
       ).then(function(user) {
-        console.log('Full user: ' + user.name);
+        console.log('Full user: ', user);
         task.assignee = user;
         return user;
       }, function(reason) {
         console.log('Exception: ' + reason);
       }).finally(function(user){
         updateAssignee(task);
-        $( '#assigneeDialog' ).dialog("close");
-        // not sure what this does, i probably copied it from some sample code.
-        // However, itstarted getting an exception that destroy couldn't be called on an empty object.
-        // Unhandled rejection Error: cannot call methods on autocomplete prior to initialization; attempted to call method 'destroy'
-        $('#assignee_popup_typeahead_input').autocomplete('destroy');
       });
   });
 }
 
 function cardEdit(task){
-  console.log('Opening task edit dialog for: ' + task.id);
+  console.log('Opening task edit dialog for: ', task);
   var dlog = $('.cardEditDialog');
   dlog.find('.card').attr('id', task.id);
   $('.closeCard').button()
@@ -841,7 +852,7 @@ function cardEdit(task){
   dlog.find('.cardComplete').prop('checked', task.completed);
   comments = dlog.find('.cardComments');
   comments.html('Loading comments...');
-  var tags = dlog.find('.cardEditTags').html('');
+  var tags = dlog.find('.cardTags').html('');
   if (task.tags) {
     task.tags.forEach(function(tag){
       tags.prepend(newTagElement(tag));
@@ -850,8 +861,12 @@ function cardEdit(task){
   var userImage = getUserImage(task.assignee);
   $('#cardAssigneeImage')
     .attr("src", userImage)
-    .attr("alt", task.assignee.name);
-  dlog.dialog('open');
+    .attr("alt", task.assignee ? task.assignee.name : 'Unassigned');
+  dlog.dialog('open')
+    .off('dialogbeforeclose')
+    .on('dialogbeforeclose', function(event, ui) {
+      $( '#' + task.id ).trigger('card:refresh', task);
+    });
   client.stories.findByTask(
       task.id,
       {
@@ -876,15 +891,17 @@ function selectProject(){
     source: projectMatcher(),
   })
   .val('')
+  .focus()
+  .select()
   .on('autocompleteselect', function(ev, ui) {
-    console.log('Selection: ' + ui.item.label);
+    console.log('Selection: ', ui.item)
     client.projects.findById(
       ui.item.value,
       {
         opt_fields: 'id,name,archived,created_at,modified_at,color,notes,workspace,team',
       }
       ).then(function(project) {
-        console.log('Full project: ' + project.name + '[' + project.id + ']');
+        console.log('Project: ', project);
         currentProject = project;
         initBoard(project);
         projectInput.val(project.name);
@@ -908,7 +925,7 @@ var userMatcher = function() {
 
 var objectMatcher = function(objectType) {
   return function(request, responseCallback) {
-    console.log("Searching for " + request.term);
+    console.log("Searching for " + objectType + ": " + request.term);
     client.workspaces.typeahead(
         currentWorkspace.id,
         {
@@ -916,8 +933,8 @@ var objectMatcher = function(objectType) {
           query: request.term,
         })
     .then(function(response) {
-      responseCallback(response.data.map(function(u) {
-        return {label: u.name, value: u.id};
+      responseCallback(response.data.map(function(obj) {
+        return {label: obj.name, value: obj.id};
       }));
     });
   }

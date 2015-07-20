@@ -9,7 +9,7 @@ var allTasks = {};
 var eventsInitialized = false;
 var CLIENT_ID = 35463866756659;
 var REDIRECT_URI = 'http://127.0.0.1:8000/static/boards/login.html';
-var PHOTO_SIZE = 'image_27x27';
+var PHOTO_SIZE = 'image_36x36';
 
 var TODO_COLUMN = {name: 'To Do:', id: -1,'status':'new'};
 var DEFAULT_COLUMNS = [TODO_COLUMN,{name: 'In Progress:', id: -2,'status':'new'},{name: 'Done:', id: -3,'status':'new'}];
@@ -274,7 +274,7 @@ function postBoardSetup() {
       selectUser(getTaskFromElement(this));
     })
     .on('card:refresh', function(event, task) {
-      var card = $( this );
+      var card = $('#' + task.id);
       card.find('.cardTitle').val(task.pretty_name);
       card.find('.cardValue').val(task.point_value);
       card.find('.cardComplete').prop('checked', task.completed);
@@ -549,21 +549,27 @@ function createCard(task, beforeCard) {
       + '</div>'
       + '<div class="card" id="'
       + task.id + '">'
+      + '<div class="personDone">'
       + '<div class="cardAssignee" >'
       + '<img id="assignee_img_' + task.id + '" src="'
       + getUserImage(task.assignee)
       + '" title="Click to assign"/>'
       + '</div>'
       + '<span class="ui-icon ui-icon-zoomin zoomin"></span>'
-      + '<textarea class="cardTitle">'
+      + '<input class="cardComplete" id="'
+      + task.id + '-checkbox'
+      + '" type="checkbox" /><label class="cardComplete" for="'
+      + task.id + '-checkbox'
+      + '"></label>'
+      + '</div>'
+      + '<div class="titlevalue">'
+      + '<div class="titleContainer"><textarea class="cardTitle">'
       + taskName
-      + '</textarea>'
-      + '<span class="cardWidgets">'
-      + '<input class="cardComplete" type="checkbox" />'
-      + '<textarea class="cardValue" >'
+      + '</textarea></div>'
+      + '<div class="valueContainer"><textarea class="cardValue" >'
       + taskValue
-      + '</textarea>'
-      + '</span>'
+      + '</textarea></div>'
+      + '</div>'
       + '</div>'
       + '</div>'
       );
@@ -592,7 +598,6 @@ function createCard(task, beforeCard) {
 
 
 function addComment(task, comment) {
-  console.log('Adding comment to task: ', comment, task);
   return client.tasks.addComment(
     task.id,
     {
@@ -719,7 +724,9 @@ function createNewColumnCode(projectId,section){
 function bindDragoverToColumn(section){
     $('#' + section.id).bind('dragover', function(event) {
       event.preventDefault();
-      if (taskDropTarget && taskDropTarget != this) {
+      if ($(event.target).hasClass('shadow')) {
+        return;
+      } else if (taskDropTarget && taskDropTarget != this) {
         removeDropShadow();
       }
       if (!taskDropTarget) {
@@ -788,7 +795,7 @@ function getUserImage(user) {
       return user.photo[PHOTO_SIZE];
     }
   }
-  return 'head.png';
+  return 'head2.png';
 }
 
 function selectUser(task){

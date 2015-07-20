@@ -1,10 +1,29 @@
+@font-face {
+    font-family: 'ProximaNova-Regular';
+    src: url('fonts/pn_reg-webfont.woff') format('woff');
+}
+
+@font-face {
+    font-family: 'ProximaNova-Light';
+    src: url('fonts/pn_light-webfont.woff') format('woff');
+}
+
+@font-face {
+    font-family: 'ProximaNova-Semibold';
+    src: url('fonts/pn_thin-webfont.woff') format('woff');
+}
+
 body
 {
-    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'ProximaNova-Light';
+    background-color: rgb(239,239,239);
+    margin: 0;
+    color: #666;
 }
 
 table {
   border-collapse: collapse;
+  border: 1px solid #bebebe;
 }
 
 .no-title .ui-dialog-titlebar {
@@ -25,7 +44,7 @@ table {
 }
 
 .ui-widget {
-    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+    font-family: proxima-nova, sans-serif;
 }
 
 .ui-tooltip-content {
@@ -58,6 +77,7 @@ table {
 {
     // width: 910px;
     // min-height:100px;
+    background: #FDFDFD;
 
     // position:relative;
     // display: inline;
@@ -79,21 +99,24 @@ table {
     float: left;
     margin-left: -1px; 
     height: 100%;
-    min-height:150px;
-    width: 200px;
-    border: 1px solid black;
-    background-color: rgb(251,251,251);
+    min-height: 150px;
+    width: 240px;
     font-size: 14px;
     vertical-align: top;
     cursor: pointer;
+    padding: 0px;
 }
 
 .columnTitle
 {
-    background-color:#DDDDDC;
-    text-align:center;
-    // color:black;
-    padding: 2px 0px;
+    padding: 0px 20px;
+    height: 64px;
+    line-height: 64px;
+    font-weight: bold;
+    font-size: 12px;
+    border-left: 1px solid #bebebe;
+    border-bottom: 1px solid #bebebe;
+    margin-left: -1px;
 }
 
 *[draggable=true]
@@ -114,7 +137,7 @@ table {
 
 .cardPadding
 {
-    min-height: 10px;
+    min-height: 8px;
     cursor: pointer;
     height: 100%;
 }
@@ -129,16 +152,16 @@ table {
 
 .cardContainer
 {
-    margin: 0 10px;
+    border: 1px solid #bebebe;
+    margin-left: -1px;
+    margin-top: -1px;
 }
 
 .card
 {
-    background-color: rgb(255,255,255);
     cursor: move;
-    border: 1px solid black;
-    min-height:60px;
-    font-family:proxima-nova, 'Helvetica Neue', Arial, sans-serif;
+    min-height: 100px;
+    font-family: 'ProximaNova-Regular';
     font-size: 12px;
     position: relative;  // this allows the .cardValue position to be relative to this element
 }
@@ -151,15 +174,17 @@ table {
     background-color: darkgray;
     border: none;
     opacity: 0.1;
-    margin: 10px 10px 0 10px;
+    height: 110px;
 }
 
 #board .cardTitle
 {
-    // background-color: rgb(255,255,255);
-    border:2px solid white;
+    background-color: transparent;
+    border: none;
     resize: none;
-    width: 147px;
+    width: 100%;
+    height: 64px;
+    font-size: 14px;
 }
 
 .cardEditDialog .cardTitle
@@ -199,32 +224,116 @@ table {
     float: right;
 }
 
+
+textarea:focus {
+  outline: none;
+}
+
+textarea {
+    font-family: 'ProximaNova-Regular';
+    color: #666;
+    padding: 0;
+}
+
+
+.titlevalue, .personDone {
+  display: table-cell;
+  height: 100px;
+  vertical-align: top;
+}
+
+.personDone {
+  width: 64px;
+}
+
+.titlevalue {
+  padding-top: 8px;
+  padding-left: 8px;
+  padding-right: 16px;
+}
+
+.titleContainer
+{
+    height: 64px;
+}
+
+.valueContainer {
+
+    text-align: right;
+}
+
 .cardValue
 {
+    // border:2px solid white;
+    // height: 100%;
+    background-color: transparent;
     resize: none;
-    text-align: center;
+    text-align: right;
+    width: 24px;
     line-height: 9px;
-    width: 27px;
-    border:2px solid white;
+    border: none;
+    margin-right: 8px;
 }
 
 #board .cardValue
 {
-    float: right;
-    position: absolute;
-    left: 149px;
-    bottom: 0px;
-    border: 2px;
 }
 
 .cardEditDialog .cardValue
 {
 }
 
+.cardComplete
+{
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+}
+
+input[type=checkbox]
+{
+    display:none;
+}
+
+input[type=checkbox] + label
+{
+    height: 24px;
+    width: 24px;
+    background-image: url('svg/btn-checkbox.svg');
+    background-repeat: no-repeat;
+    background-size: contain;
+    position: absolute;
+}
+
+input[type=checkbox]:checked + label
+{
+    background-image: url('svg/btn-checkbox-selected.svg');
+}
+
+#reverse_line
+{
+    display: inline;
+}
+
+#reverse_line span
+{
+    margin-left: 32px;
+    vertical-align: middle;
+}
+
 #board .cardAssignee
 {
-    float: right;
-    padding: 2px;
+    height: 32px;
+    width: 32px;
+    margin-left: 16px;
+    margin-top: 8px;
+    margin-right: 16px;
+}
+
+.cardAssignee img {
+    border-radius: 50%;
+    max-height: 100%;
+    max-width: 100%;
 }
 
 .cardEditDialog .cardAssignee

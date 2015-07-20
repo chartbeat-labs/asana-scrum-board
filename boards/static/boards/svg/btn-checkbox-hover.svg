@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.2 (12043) - http://www.bohemiancoding.com/sketch -->
+    <title>btn-checkbox-hover</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <filter x="-50%" y="-50%" width="200%" height="200%" filterUnits="objectBoundingBox" id="filter-1">
+            <feOffset dx="0" dy="3" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="3" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.168 0" in="shadowBlurOuter1" type="matrix" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+    </defs>
+    <g id="Stickersheet" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="sheet" sketch:type="MSLayerGroup" transform="translate(-1040.000000, -4214.000000)" fill="#FFFFFF">
+            <rect id="Sheet" sketch:type="MSShapeGroup" x="0" y="539.98963" width="3452" height="5245.01037"></rect>
+        </g>
+        <g id="toggles" sketch:type="MSLayerGroup" transform="translate(-40.000000, -192.000000)">
+            <g id="checkbox" transform="translate(48.000000, 200.000000)" sketch:type="MSShapeGroup">
+                <rect id="bounds" stroke="#D8D8D8" opacity="0" x="0" y="0" width="24" height="24"></rect>
+                <rect id="button" stroke-opacity="0.04" stroke="#000000" fill="#FEFEFE" filter="url(#filter-1)" x="2" y="2" width="20" height="20" rx="2"></rect>
+                <rect id="rectangle" fill="#4EA3DA" x="8" y="8" width="8" height="8" rx="2"></rect>
+            </g>
+        </g>
+    </g>
+</svg>

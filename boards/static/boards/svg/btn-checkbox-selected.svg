@@ -1,0 +1,17 @@
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="filter-1">
+            <feOffset dx="0" dy="1" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="0.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.14 0" in="shadowBlurOuter1" type="matrix" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+    </defs>
+    <g fill-rule="evenodd">
+        <rect id="button" stroke-opacity="0.04" stroke="#000000" fill="#FFFFFF" filter="url(#filter-1)" x="2" y="2" width="20" height="20" rx="2"></rect>
+        <path d="M5,6.00684547 C5,5.45078007 5.44994876,5 6.00684547,5 L17.9931545,5 C18.5492199,5 19,5.44994876 19,6.00684547 L19,17.9931545 C19,18.5492199 18.5500512,19 17.9931545,19 L6.00684547,19 C5.45078007,19 5,18.5500512 5,17.9931545 L5,6.00684547 Z M9.88461538,16.5 C9.66806573,16.5 9.45151608,16.412132 9.28629426,16.2363961 L6.74783272,13.5363961 C6.41738909,13.1849242 6.41738909,12.6150758 6.74783272,12.2636039 C7.07827636,11.912132 7.61403134,11.912132 7.94447497,12.2636039 L9.88461538,14.3272078 L16.055525,7.7636039 C16.3859687,7.41213203 16.9217236,7.41213203 17.2521673,7.7636039 C17.5826109,8.11507576 17.5826109,8.68492424 17.2521673,9.0363961 L10.4829365,16.2363961 C10.3177147,16.412132 10.101165,16.5 9.88461538,16.5 Z" fill="#4EA3DA"></path>
+    </g>
+</svg>

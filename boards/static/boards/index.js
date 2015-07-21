@@ -8,7 +8,7 @@ var currentProject;
 var allTasks = {};
 var eventsInitialized = false;
 var CLIENT_ID = 35463866756659;
-var REDIRECT_URI = 'http://127.0.0.1:8000/static/boards/login.html';
+var REDIRECT_URI = 'http://hacks.chartbeat.com/asana/login.html';
 var PHOTO_SIZE = 'image_36x36';
 
 var TODO_COLUMN = {name: 'To Do:', id: -1,'status':'new'};
@@ -616,7 +616,7 @@ function createCard(task, beforeCard) {
   card.find('.cardComplete').prop('checked', task.completed);
 
   $(beforeCard).before(card);
-  
+
   updateSectionPoints(card);
   // $('#' + task.id + '_close').prop('checked', task.completed);
 
@@ -653,7 +653,7 @@ function updateSectionPoints(card){
 		}
 		totalPoints = totalPoints + currentPoints;
 	});
-	
+
     pointValueContainer.text(totalPoints);
 }
 

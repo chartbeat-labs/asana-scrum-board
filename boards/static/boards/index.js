@@ -302,17 +302,29 @@ function postBoardSetup() {
       });
       cardEdit(getTaskFromElement(this));
     })
+    .on('mouseenter', '.card', function(event) {
+      if ($(this).children('.zoomin').hasClass('hidden')) {
+        $(this).children('.zoomin').removeClass('hidden');
+      }
+    })
+    .on('mouseleave', '.card', function(event) {
+      $(this).children('.zoomin').addClass('hidden');
+    })
     /************************
      * Create task handlers *
      ************************/
     // On enter, show the plus icon unless already clicked
     .on('mouseenter', '.cardPadding, .column', function(event) {
+      if ($(this).children('.zoomin').hasClass('hidden')) {
+        $(this).children('.zoomin').removeClass('hidden');
+      }
       if ($(this).children('.load').hasClass('hidden')) {
         $(this).children('.plus').removeClass('hidden');
       }
     })
     // On exit, hide the plus icon
     .on('mouseleave', '.cardPadding, .column', function(event) {
+      $(this).children('.plus').addClass('hidden');
       $(this).children('.plus').addClass('hidden');
     })
     // Add/remove plus icon from the resident column so it does not appear
@@ -589,13 +601,13 @@ function createCard(task, beforeCard) {
       + '</div>'
       + '<div class="card" id="'
       + task.id + '">'
+      + '<span class="ui-icon ui-icon-extlink zoomin hidden"></span>'
       + '<div class="personDone">'
       + '<div class="cardAssignee" >'
       + '<img id="assignee_img_' + task.id + '" src="'
       + getUserImage(task.assignee)
       + '" title="Click to assign"/>'
       + '</div>'
-      + '<span class="ui-icon ui-icon-zoomin zoomin"></span>'
       + '<input class="cardComplete" id="'
       + task.id + '-checkbox'
       + '" type="checkbox" /><label class="cardComplete" for="'

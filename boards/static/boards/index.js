@@ -7,8 +7,8 @@ var currentUser;
 var currentProject;
 var allTasks = {};
 var eventsInitialized = false;
-var CLIENT_ID = 35463866756659;
-var REDIRECT_URI = 'https://hacks.chartbeat.com/asana/login.html';
+var CLIENT_ID = localStorage.asanaClientId || 35463866756659;
+var REDIRECT_URI = localStorage.asanaRedirectUri || 'https://hacks.chartbeat.com/asana/login.html';
 var PHOTO_SIZE = 'image_36x36';
 
 var TODO_COLUMN = {name: 'To Do:', id: -1,'status':'new'};

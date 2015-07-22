@@ -1,0 +1,4 @@
+.graph-axis line,  .graph-axis path {
+  fill: none;
+  stroke: black;
+}

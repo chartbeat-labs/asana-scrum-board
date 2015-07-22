@@ -136,6 +136,12 @@ function initBoard(project) {
   })
   .finally(function(){
     postBoardSetup();
+
+    if (project.metaData &&
+        project.metaData.startDate &&
+        project.metaData.endDate) {
+      renderCumulativeFlow(project);
+    }
   });
 }
 
@@ -509,10 +515,12 @@ function doDropCardEvent(event,targetColumn,projectId) {
           }
     }
 
-
+function isSectionTask(task) {
+  return ':' == task.name.charAt(task.name.length-1);
+}
 
 function addTask(task, currentSection, projectId) {
-  if (':' == task.name.charAt(task.name.length-1)) {
+  if (isSectionTask(task)) {
     // we're a section
     currentSection = task;
     prependColumn(projectId, currentSection);
@@ -1393,3 +1401,293 @@ function renderChart(project, tasks) {
     .attr("transform", "rotate(-90)")
     .text("Points remaining");
 }
+
+
+
+var postProcessTask = function(task) {
+  var prettyName = task.name;
+  var points = 0;
+
+  var match = /^\s*\[([0-9.]+)\]\s*(.*)$/.exec(task.name);
+
+  if (match) {
+    points = parseInt(match[1], 10);
+    prettyName = match[2];
+  }
+
+  task.points = points;
+  task.prettyName = prettyName;
+};
+
+
+/**
+ * Render a cumulative flow graph that shows time on the x axis, and task points
+ * on the y axis, where points are grouped by section. This lets you see how the
+ * task points move from section to section over the course of time (hopefully
+ * points are moving towards the "Done" or "Completed" section!)
+ *
+ * This relies on some metadata being in the project's notes field (the
+ * Description field in the interface). Specifically, it needs a startDate and
+ * endDate to be defined in the metadata. For example, the following text in a
+ * project description would set the start and end dates for the project:
+ *
+ *     metadata =====
+ *     {
+ *       "startDate": "2015-07-21",
+ *       "endDate": "2015-08-03"
+ *     }
+ *     =====
+ *
+ * This is still super-hacky and needs to be broken up, cleaned up, etc.
+ */
+var renderCumulativeFlow = function(project) {
+  var tasks = {};
+  var storyPromises = [];
+  var sections = [{
+    'index': 0,
+    'name': 'Uncategorized'
+  }];
+
+  function getSectionAsOfDate(task, isoDateString) {
+    if (task['created_at'] > isoDateString) {
+      return null;
+    }
+
+    var sectionName = task.section || 'Uncategorized';
+    if (!task.stories || !task.stories.length) {
+      return sectionName;
+    }
+
+    for (var i = task.stories.length - 1; i >= 0; i--) {
+      if (task.stories[i]['created_at'] > isoDateString) {
+        sectionName = task.stories[i].oldSection;
+      } else {
+        break;
+      }
+    }
+
+    return sectionName;
+  }
+
+  client.tasks.findByProject(
+      project.id,
+      {
+        opt_fields: 'id,name'
+      })
+  .then(function(taskCollection) {
+    var currentSection = null;
+    var tasks = [];
+    var storyPromises = [];
+    var sectionIndex = 1;
+
+    var taskStream = taskCollection.stream();
+
+    taskStream.on('data', function(task) {
+      if (isSectionTask(task)) {
+        currentSection = task.name.substring(0, task.name.length - 1);
+        sections.push({
+          'index': sectionIndex,
+          'name': currentSection
+        });
+        sectionIndex++;
+      } else {
+        task.section = currentSection;
+        postProcessTask(task);
+
+        tasks.push(task);
+
+        var storyPromise =
+            client.stories.findByTask(task.id, {'limit': 100})
+            .then(function(storyCollection) {
+              task.stories = storyCollection.data
+              .map(function(story) {
+                if (story.type === 'system') {
+                  var match = story.text.match(/moved from (.+) to (.+) \((.+)\)/);
+                  if (match && match[3] === project.name) {
+                    story.oldSection = match[1];
+                    story.newSection = match[2];
+                  }
+                }
+                return story;
+              })
+              .filter(function(story) {
+                // Filter to only the section move stories.
+                return !!story.oldSection;
+              });
+            });
+
+        storyPromises.push(storyPromise);
+      }
+    });
+
+    return new Promise(function(resolve, reject) {
+      taskStream.on('end', function() {
+        Promise.all(storyPromises)
+        .then(function() {
+          resolve(tasks);
+        })
+      });
+    })
+  })
+  .then(function(tasks) {
+    function parseNaiveDate(dateString) {
+      var match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(dateString);
+      if (!match) {
+        return null;
+      }
+      return new Date(parseInt(match[1], 10),
+          parseInt(match[2], 10) - 1, // Months are zero-based
+          parseInt(match[3], 10));
+    }
+
+    var startDate = parseNaiveDate(project.metaData.startDate);
+    var endDate = parseNaiveDate(project.metaData.endDate);
+
+    var chartModel = [];
+    var currentDate = new Date(startDate.getTime());
+
+    while(currentDate <= endDate) {
+      var dayModel = {
+        'date': new Date(currentDate.getTime()),
+        'sections': [],
+        'sectionsByName': {}
+      };
+      sections.forEach(function(section) {
+        var sectionModel = {
+          'name': section.name,
+          'tasks': [],
+          'points': 0
+        };
+        dayModel.sectionsByName[section.name] = sectionModel;
+        dayModel.sections.push(sectionModel);
+      });
+
+      // Advance currentDate to the next day. This will be midnight in between
+      // the day we're processing and the next day.
+      currentDate.setDate(currentDate.getDate() + 1);
+
+      var isoDateString = currentDate.toISOString();
+      tasks.forEach(function(task) {
+        var sectionName = getSectionAsOfDate(task, isoDateString);
+        // null section at this point means the task didn't even exist as of
+        // this date. Tasks that were not in any section as of this date are now
+        // under "Uncategorized" section.
+        if (sectionName) {
+          var sectionModel = dayModel.sectionsByName[sectionName];
+          sectionModel.tasks.push(task);
+          sectionModel.points += task.points;
+        }
+      });
+
+      chartModel.push(dayModel);
+    }
+
+    var width = 1000;
+    var height = 600;
+    var timeScale = d3.time.scale()
+      .domain([startDate, endDate])
+      .range([0, width]);
+    var pointScale = d3.scale.linear()
+      .domain([
+        0,
+        d3.max(chartModel, function(d) {
+          return d3.sum(d.sections, function(d) {return d.points;});
+        })
+      ])
+      .range([height, 0]);
+    var colorScale = d3.scale.category10();
+
+    var sectionLayerModel = sections.map(function(section) {
+      var sectionName = section.name;
+      var layer = {
+        'index': section.index,
+        'name': sectionName
+      };
+
+      layer.days = chartModel.map(function(day) {
+        return {
+          'date': day.date,
+          'points': day.sectionsByName[sectionName].points,
+          'tasks': day.sectionsByName[sectionName].tasks,
+          'y0': 0
+        };
+      });
+
+      return layer;
+    });
+
+    sectionLayerModel.reverse();
+
+    var stack = d3.layout.stack()
+      .values(function(layer) {
+        return layer.days;
+      })
+      .x(function(d) {
+        return d.date;
+      })
+      .y(function(d) {
+        return d.points;
+      })
+      .out(function(d, y0) {
+        d.y0 = y0;
+      });
+
+    stack(sectionLayerModel);
+
+    var streamContainer = d3.select('.cumulative-flow-viz .cumulative-flow-streams');
+    streamContainer.selectAll('*').remove();
+
+    // Set up d3's area function to draw each stream
+    var calcStreamArea = d3.svg.area()
+        .x(function(d) {
+          return timeScale(d.date);
+        })
+        .y0(function(d) {
+          return pointScale(d.y0);
+        })
+        .y1(function(d) {
+          return pointScale(d.y0 + d.points);
+        });
+
+    // g for each layer dataset.
+    var streamGroups = streamContainer
+        .selectAll('g')
+        .data(sectionLayerModel, function(d) {return d.name;});
+
+    // Add any entering layer as an svg:g with a svg:path element inside.
+    var enter = streamGroups
+        .enter()
+        .append('g')
+        .attr('class', function(d) {
+          return 'section-stream-' + d.name.trim().replace(/\s+/g, '-').toLowerCase();
+        })
+        .append('path')
+        .attr('class', 'stream');
+
+    // Set the stream path for each series
+    streamGroups
+        .selectAll('.stream')
+        .attr('d', function(d) {return calcStreamArea(d.days);})
+        .attr('fill', function(d) {return colorScale(d.index);});
+
+    var axesContainer = d3.select('.cumulative-flow-viz .cumulative-flow-axes');
+    axesContainer.selectAll('*').remove();
+
+    var xAxis = d3.svg.axis()
+        .scale(timeScale)
+        .orient('bottom');
+
+    var yAxis = d3.svg.axis()
+        .scale(pointScale)
+        .orient('left');
+
+    axesContainer.append('g')
+        .attr('class', 'graph-axis cumulative-flow-x-axis')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis);
+    axesContainer.append('g')
+        .attr('class', 'graph-axis cumulative-flow-y-axis')
+        .call(yAxis);
+  });
+};
+

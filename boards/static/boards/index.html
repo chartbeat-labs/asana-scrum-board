@@ -10,6 +10,7 @@
 <script src="index.js"></script>
 <link rel="stylesheet" href="board_style.css" />
 <link rel="stylesheet" href="chart_style.css" />
+<link rel="stylesheet" href="cumulative_flow_style.css" />
 </head>
 <body>
 
@@ -41,9 +42,17 @@
       </tbody>
     </table>
     <br />
-    <div class="burndown">
-      <svg id="visualisation" width="1000" height="500" class="chart"></svg>
+    <div class="cumulative-flow-viz-container">
+      <svg class="cumulative-flow-viz" width="1200" height="800">
+        <g class="cumulative-flow-content" transform="translate(100, 100)">
+          <g class="cumulative-flow-streams"></g>
+          <g class="cumulative-flow-axes"></g>
+        </g>
+      </svg>
     </div>
+   <!--  <div class="burndown">
+      <svg id="visualisation" width="1000" height="500" class="chart"></svg>
+    </div> -->
 
   </div>
 <span id="assigneeDialog">
@@ -88,7 +97,7 @@
         <input class="cardValue" type="text" />
       </div>
     </span>
-    <button class="closeCard">Done</button></br>
+    <button class="closeCard">Done</button><br>
   </div>
 </span>
 <script>setupDemo();</script>

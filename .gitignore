@@ -1,0 +1,9 @@
+*~
+*.pyc
+*#*#
+*.sw?
+*.DS_Store
+.venv_*
+.venv/
+*.egg-info/
+TAGS
